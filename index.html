@@ -1,0 +1,331 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.4">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;GoBarBerly - Salon Appointment Booking&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/css/intlTelInput.css" rel="stylesheet"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;link href="styles.css" rel="stylesheet"&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;header class="header"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;a href="https://www.gobarberly.com" target="_blank"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;img src="https://cdn.prod.website-files.com/67e490b73dd414300e9b23f7/67ed1380bec349b78728a1fa_B.jpg" alt="GoBarBerly Logo" class="header-logo"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/a&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="header-tagline"&gt;🙏🏾for your business&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/header&gt;</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="booking-title"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;h1&gt;Book Your Appointment&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;p&gt;Follow the easy steps to book your salon appointment&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="booking-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="booking-progress"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step active" data-step="1"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;1&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Services&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step" data-step="2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;2&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Barber&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step" data-step="3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;3&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Date&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step" data-step="4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;4&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Time&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step" data-step="5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;5&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Add-ons&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="booking-step" data-step="6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-number"&gt;6&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="step-name"&gt;Your Info&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="booking-content"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 1: Services --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content active" id="step1"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Select a Service&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Choose from our premium salon services&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="service-grid"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="service-card" data-id="haircut" data-price="600" data-duration="45"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-icon"&gt;&lt;i class="fas fa-cut"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-name"&gt;Haircut&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-price"&gt;₹600&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;45 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="service-card" data-id="shave" data-price="350" data-duration="30"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-icon"&gt;&lt;i class="fas fa-razor"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-name"&gt;Shave&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-price"&gt;₹350&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;30 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="service-card" data-id="haircut-shave" data-price="900" data-duration="75"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-icon"&gt;&lt;i class="fas fa-user-tie"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-name"&gt;Haircut + Shave&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-price"&gt;₹900&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;75 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="service-card" data-id="color" data-price="1200" data-duration="90"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-icon"&gt;&lt;i class="fas fa-palette"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-name"&gt;Hair Coloring&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="service-price"&gt;₹1200&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;90 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 2: Barber --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="step2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Select a Barber&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Choose your preferred stylist&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="barber-grid"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="barber-card" data-id="barber1"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-icon"&gt;&lt;i class="fas fa-user"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-name"&gt;Arjun Sharma&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-speciality"&gt;Master Barber&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="barber-card" data-id="barber2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-icon"&gt;&lt;i class="fas fa-user"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-name"&gt;Priya Patel&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-speciality"&gt;Color Specialist&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="barber-card" data-id="barber3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-icon"&gt;&lt;i class="fas fa-user"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-name"&gt;Vikram Singh&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-speciality"&gt;Style Expert&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="barber-card" data-id="barber4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-icon"&gt;&lt;i class="fas fa-user"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-name"&gt;Neha Kapoor&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="barber-speciality"&gt;Senior Stylist&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 3: Date --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="step3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Select a Date&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Choose your preferred appointment date&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="date-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;input type="text" id="date-picker" class="date-picker" placeholder="Select date"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 4: Time --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="step4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Select a Time&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Choose your preferred appointment time&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="time-grid" id="time-slots"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;!-- Time slots will be generated dynamically --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 5: Add-ons --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="step5"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Add Extra Services&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Enhance your visit with these premium add-ons&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="addon-grid"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="addon-card" data-id="massage" data-price="400" data-duration="30"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-icon"&gt;&lt;i class="fas fa-hands"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-name"&gt;Scalp Massage&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-price"&gt;₹400&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;30 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="addon-card" data-id="facial" data-price="600" data-duration="30"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-icon"&gt;&lt;i class="fas fa-spa"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-name"&gt;Mini Facial&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-price"&gt;₹600&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;30 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="addon-card" data-id="treatment" data-price="500" data-duration="30"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-icon"&gt;&lt;i class="fas fa-pump-soap"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-name"&gt;Deep Conditioning&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-price"&gt;₹500&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;30 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="addon-card" data-id="eyebrows" data-price="250" data-duration="30"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-icon"&gt;&lt;i class="fas fa-eye"&gt;&lt;/i&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-name"&gt;Eyebrow Shaping&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="addon-price"&gt;₹250&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="duration-badge"&gt;30 mins&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Step 6: Customer Info --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="step6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2&gt;Your Information&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p&gt;Please provide your contact details&lt;/p&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                    </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;form id="customer-form"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="form-group"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;label for="first-name"&gt;First Name&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;input type="text" id="first-name" class="form-control" required&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="error-message" id="first-name-error"&gt;Please enter your first name&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                        </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="form-group"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;label for="last-name"&gt;Last Name&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;input type="text" id="last-name" class="form-control" required&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="error-message" id="last-name-error"&gt;Please enter your last name&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                        </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="form-group"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;label for="email"&gt;Email&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;input type="email" id="email" class="form-control" required&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="error-message" id="email-error"&gt;Please enter a valid email address&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                        </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="form-group"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;label for="phone"&gt;Phone Number&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="phone-input-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;input type="tel" id="phone" class="form-control" required&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="error-message" id="phone-error"&gt;Please enter a valid phone number&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                        </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="booking-summary"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-title"&gt;Booking Summary&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Service:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-service"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Barber:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-barber"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Date:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-date"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Time:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-time"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item" id="addons-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Add-ons:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-addons"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Duration:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-duration"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="summary-item total-row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-label"&gt;Total:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-value" id="summary-total"&gt;₹0&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/form&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;!-- Confirmation Step --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="step-content" id="confirmation"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div class="confirmation-message"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="confirmation-icon"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;i class="fas fa-check-circle"&gt;&lt;/i&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;h2 class="confirmation-title"&gt;Booking Confirmed!&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;p&gt;Your appointment has been successfully booked.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;div class="confirmation-details"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="booking-summary"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-title"&gt;Appointment Details&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Service:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-service"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Barber:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-barber"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Date:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-date"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Time:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-time"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item" id="conf-addons-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Add-ons:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-addons"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Duration:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-duration"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Name:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-name"&gt;-&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;div class="summary-item total-row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-label"&gt;Total:&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;div class="summary-value" id="conf-total"&gt;₹0&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;p style="text-align: center; margin-top: 20px;"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>A confirmation has been sent to your email and phone.</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;div class="action-buttons"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button class="btn btn-calendar" id="add-to-calendar"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;i class="fas fa-calendar-plus"&gt;&lt;/i&gt; Add to Calendar</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button class="btn btn-reschedule" id="reschedule-btn"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;i class="fas fa-clock"&gt;&lt;/i&gt; Reschedule</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;button class="btn btn-cancel" id="cancel-btn"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                                    </span>&lt;i class="fas fa-times"&gt;&lt;/i&gt; Cancel</p>
+<p class="p1"><span class="Apple-converted-space">                                </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="button-container"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button class="btn btn-prev" id="prev-btn" disabled&gt;Previous&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;button class="btn btn-next" id="next-btn"&gt;Next&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;footer class="footer"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;Made with 🩷in 🇮🇳&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;© 2025 GoBarBerly. All rights reserved.&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/footer&gt;</p>
+<p class="p2"><span class="Apple-converted-space">    </span></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/intlTelInput.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="script.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
