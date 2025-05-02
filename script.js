@@ -538,10 +538,10 @@ document.addEventListener('DOMContentLoaded', function() {
         sendWhatsAppConfirmation(bookingData);
     }
     
-    // Send email confirmation function - UPDATED FOR ZAPIER
+    // Send email confirmation function - COMPLETELY REVISED FOR ZAPIER
     function sendEmailConfirmation(bookingData) {
-        // Prepare simplified data for Zapier - KEY CHANGE HERE
-        const zapierData = {
+        // Create query parameters
+        const params = new URLSearchParams({
             messageType: 'email',
             customerEmail: bookingData.customerInfo.email,
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
@@ -549,19 +549,15 @@ document.addEventListener('DOMContentLoaded', function() {
             barber: bookingData.barber.name,
             date: bookingData.date,
             time: bookingData.time,
-            duration: bookingData.totalDuration,
-            price: bookingData.totalPrice,
+            duration: bookingData.totalDuration.toString(),
+            price: bookingData.totalPrice.toString(),
             addons: bookingData.addons.map(addon => addon.name).join(', '),
             appointmentId: bookingData.appointmentId
-        };
+        });
         
-        // Send data to Zapier webhook
-        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(zapierData) // Use stringified simple object
+        // Send data to Zapier webhook with query parameters
+        fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
+            method: 'GET'  // Using GET for query parameters
         })
         .then(response => {
             if (response.ok) {
@@ -575,10 +571,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send SMS confirmation function - UPDATED FOR ZAPIER
+    // Send SMS confirmation function - COMPLETELY REVISED FOR ZAPIER
     function sendSMSConfirmation(bookingData) {
-        // Prepare simplified data for Zapier - KEY CHANGE HERE
-        const zapierData = {
+        // Create query parameters
+        const params = new URLSearchParams({
             messageType: 'sms',
             phoneNumber: bookingData.customerInfo.phone,
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
@@ -587,14 +583,11 @@ document.addEventListener('DOMContentLoaded', function() {
             date: bookingData.date,
             time: bookingData.time,
             appointmentId: bookingData.appointmentId
-        };
+        });
         
-        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(zapierData) // Use stringified simple object
+        // Send data to Zapier webhook with query parameters
+        fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
+            method: 'GET'  // Using GET for query parameters
         })
         .then(response => {
             if (response.ok) {
@@ -608,10 +601,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send WhatsApp confirmation function - UPDATED FOR ZAPIER
+    // Send WhatsApp confirmation function - COMPLETELY REVISED FOR ZAPIER
     function sendWhatsAppConfirmation(bookingData) {
-        // Prepare simplified data for Zapier - KEY CHANGE HERE
-        const zapierData = {
+        // Create query parameters
+        const params = new URLSearchParams({
             messageType: 'whatsapp',
             phoneNumber: bookingData.customerInfo.phone,
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
@@ -619,16 +612,13 @@ document.addEventListener('DOMContentLoaded', function() {
             barber: bookingData.barber.name,
             date: bookingData.date,
             time: bookingData.time,
-            price: bookingData.totalPrice,
+            price: bookingData.totalPrice.toString(),
             appointmentId: bookingData.appointmentId
-        };
+        });
         
-        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(zapierData) // Use stringified simple object
+        // Send data to Zapier webhook with query parameters
+        fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
+            method: 'GET'  // Using GET for query parameters
         })
         .then(response => {
             if (response.ok) {
