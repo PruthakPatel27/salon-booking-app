@@ -538,30 +538,143 @@ document.addEventListener('DOMContentLoaded', function() {
     function sendConfirmations(bookingData) {
         console.log('Sending confirmations for:', bookingData);
         
-        // Email confirmation (via Zapier in production)
+        // Email confirmation
         sendEmailConfirmation(bookingData);
         
-        // SMS confirmation (via Zapier + Twilio in production)
+        // SMS confirmation
         sendSMSConfirmation(bookingData);
         
-        // WhatsApp confirmation (via Twilio in production)
+        // WhatsApp confirmation
         sendWhatsAppConfirmation(bookingData);
     }
     
-    // Mock functions for sending notifications
+    // Send email confirmation function
     function sendEmailConfirmation(bookingData) {
-        console.log('Sending email confirmation to:', bookingData.customerInfo.email);
-        // In production, this would trigger a Zapier workflow
+        // Create a data object with a clear structure for Zapier
+        const emailData = {
+            // Specify message type for filtering in Zapier
+            messageType: 'email',
+            
+            // Add customer email as a direct field for easy access in Zapier
+            customerEmail: bookingData.customerInfo.email,
+            
+            // Include customer name for personalization
+            customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
+            
+            // Include appointment details
+            appointmentId: bookingData.appointmentId,
+            service: bookingData.service.name,
+            barber: bookingData.barber.name,
+            date: bookingData.date,
+            time: bookingData.time,
+            duration: bookingData.totalDuration,
+            price: bookingData.totalPrice,
+            
+            // Include add-ons if any
+            addons: bookingData.addons.map(addon => addon.name).join(', ')
+        };
+        
+        // Send data to Zapier webhook using the provided URL
+        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Email confirmation request sent successfully');
+            } else {
+                console.error('Failed to send email confirmation request');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending email confirmation:', error);
+        });
     }
     
+    // Send SMS confirmation function
     function sendSMSConfirmation(bookingData) {
-        console.log('Sending SMS confirmation to:', bookingData.customerInfo.phone);
-        // In production, this would trigger a Zapier workflow that uses Twilio
+        // Create the SMS content data
+        const smsData = {
+            // Include a type field to differentiate between email and SMS in Zapier
+            messageType: 'sms',
+            
+            // Add phone number for SMS
+            phoneNumber: bookingData.customerInfo.phone,
+            
+            // Include customer name for personalization
+            customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
+            
+            // Include appointment details
+            appointmentId: bookingData.appointmentId,
+            service: bookingData.service.name,
+            barber: bookingData.barber.name,
+            date: bookingData.date,
+            time: bookingData.time
+        };
+        
+        // Use the same webhook URL but send different data structure
+        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(smsData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('SMS confirmation request sent successfully');
+            } else {
+                console.error('Failed to send SMS confirmation request');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending SMS confirmation:', error);
+        });
     }
     
+    // Send WhatsApp confirmation function
     function sendWhatsAppConfirmation(bookingData) {
-        console.log('Sending WhatsApp confirmation to:', bookingData.customerInfo.phone);
-        // In production, this would use the Twilio WhatsApp API
+        // Create the WhatsApp content data
+        const whatsappData = {
+            // Include a type field to differentiate message types in Zapier
+            messageType: 'whatsapp',
+            
+            // Add phone number for WhatsApp
+            phoneNumber: bookingData.customerInfo.phone,
+            
+            // Include customer name for personalization
+            customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
+            
+            // Include appointment details
+            appointmentId: bookingData.appointmentId,
+            service: bookingData.service.name,
+            barber: bookingData.barber.name,
+            date: bookingData.date,
+            time: bookingData.time,
+            price: bookingData.totalPrice
+        };
+        
+        // Use the same webhook URL
+        fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(whatsappData)
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('WhatsApp confirmation request sent successfully');
+            } else {
+                console.error('Failed to send WhatsApp confirmation request');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending WhatsApp confirmation:', error);
+        });
     }
     
     // Add to Calendar button handler
