@@ -520,21 +520,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         bookingState.bookedSlots[bookingState.date].push(bookingState.time);
         
-        // Integration with Google Calendar (mock)
-        addToGoogleCalendar(bookingData);
-        
-        // Send confirmation emails and SMS (mock)
+        // Send confirmation emails and SMS
         sendConfirmations(bookingData);
     }
     
-    // Google Calendar Integration (Mock)
-    function addToGoogleCalendar(bookingData) {
-        console.log('Adding to Google Calendar:', bookingData);
-        // In a real implementation, this would use the Google Calendar API
-        // to create a calendar event for the salon
-    }
-    
-    // Send confirmations (Mock)
+    // Send confirmations
     function sendConfirmations(bookingData) {
         console.log('Sending confirmations for:', bookingData);
         
@@ -548,39 +538,30 @@ document.addEventListener('DOMContentLoaded', function() {
         sendWhatsAppConfirmation(bookingData);
     }
     
-    // Send email confirmation function
+    // Send email confirmation function - UPDATED FOR ZAPIER
     function sendEmailConfirmation(bookingData) {
-        // Create a data object with a clear structure for Zapier
-        const emailData = {
-            // Specify message type for filtering in Zapier
+        // Prepare simplified data for Zapier - KEY CHANGE HERE
+        const zapierData = {
             messageType: 'email',
-            
-            // Add customer email as a direct field for easy access in Zapier
             customerEmail: bookingData.customerInfo.email,
-            
-            // Include customer name for personalization
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
-            
-            // Include appointment details
-            appointmentId: bookingData.appointmentId,
             service: bookingData.service.name,
             barber: bookingData.barber.name,
             date: bookingData.date,
             time: bookingData.time,
             duration: bookingData.totalDuration,
             price: bookingData.totalPrice,
-            
-            // Include add-ons if any
-            addons: bookingData.addons.map(addon => addon.name).join(', ')
+            addons: bookingData.addons.map(addon => addon.name).join(', '),
+            appointmentId: bookingData.appointmentId
         };
         
-        // Send data to Zapier webhook using the provided URL
+        // Send data to Zapier webhook
         fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(emailData)
+            body: JSON.stringify(zapierData) // Use stringified simple object
         })
         .then(response => {
             if (response.ok) {
@@ -594,34 +575,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send SMS confirmation function
+    // Send SMS confirmation function - UPDATED FOR ZAPIER
     function sendSMSConfirmation(bookingData) {
-        // Create the SMS content data
-        const smsData = {
-            // Include a type field to differentiate between email and SMS in Zapier
+        // Prepare simplified data for Zapier - KEY CHANGE HERE
+        const zapierData = {
             messageType: 'sms',
-            
-            // Add phone number for SMS
             phoneNumber: bookingData.customerInfo.phone,
-            
-            // Include customer name for personalization
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
-            
-            // Include appointment details
-            appointmentId: bookingData.appointmentId,
             service: bookingData.service.name,
             barber: bookingData.barber.name,
             date: bookingData.date,
-            time: bookingData.time
+            time: bookingData.time,
+            appointmentId: bookingData.appointmentId
         };
         
-        // Use the same webhook URL but send different data structure
         fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(smsData)
+            body: JSON.stringify(zapierData) // Use stringified simple object
         })
         .then(response => {
             if (response.ok) {
@@ -635,35 +608,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send WhatsApp confirmation function
+    // Send WhatsApp confirmation function - UPDATED FOR ZAPIER
     function sendWhatsAppConfirmation(bookingData) {
-        // Create the WhatsApp content data
-        const whatsappData = {
-            // Include a type field to differentiate message types in Zapier
+        // Prepare simplified data for Zapier - KEY CHANGE HERE
+        const zapierData = {
             messageType: 'whatsapp',
-            
-            // Add phone number for WhatsApp
             phoneNumber: bookingData.customerInfo.phone,
-            
-            // Include customer name for personalization
             customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
-            
-            // Include appointment details
-            appointmentId: bookingData.appointmentId,
             service: bookingData.service.name,
             barber: bookingData.barber.name,
             date: bookingData.date,
             time: bookingData.time,
-            price: bookingData.totalPrice
+            price: bookingData.totalPrice,
+            appointmentId: bookingData.appointmentId
         };
         
-        // Use the same webhook URL
         fetch('https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(whatsappData)
+            body: JSON.stringify(zapierData) // Use stringified simple object
         })
         .then(response => {
             if (response.ok) {
@@ -712,8 +677,6 @@ END:VCALENDAR`;
         window.open(googleCalendarUrl, '_blank');
         
         // For iCal: create a downloadable file
-        // Note: This is a simple implementation. In a production environment,
-        // you might want to handle this differently or provide more options.
         const blob = new Blob([icalData], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
