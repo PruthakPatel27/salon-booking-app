@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoBarBerly - SMS Opt-In Process Documentation</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #222;
+        }
+        
+        h2 {
+            margin-top: 40px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        h3 {
+            margin-top: 30px;
+            color: #444;
+        }
+        
+        p {
+            margin-bottom: 15px;
+        }
+        
+        .flow-section {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+        
+        .screenshot {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .opt-in-example {
+            background-color: #f0f7ff;
+            border: 1px solid #c0d6e9;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        
+        .sms-example {
+            background-color: #e9f5e9;
+            border: 1px solid #c3e6c3;
+            padding: 15px 20px;
+            border-radius: 20px;
+            width: 80%;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .logo {
+            height: 40px;
+            margin-bottom: 20px;
+        }
+        
+        .important-note {
+            background-color: #fff4e5;
+            border-left: 4px solid #ffb74d;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .step {
+            display: flex;
+            margin-bottom: 30px;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            background-color: #d4af37;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex-grow: 1;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://cdn.prod.website-files.com/67e490b73dd414300e9b23f7/67ed1380bec349b78728a1fa_B.jpg" alt="GoBarBerly Logo" class="logo">
+        <h1>SMS Opt-In Process Documentation</h1>
+        <p>This document demonstrates the complete process of how customers opt in to receiving SMS notifications from GoBarBerly Salon.</p>
+    </header>
+    
+    <section>
+        <h2>Overview of SMS Opt-In Process</h2>
+        <p>At GoBarBerly, we take customer consent and data privacy seriously. Our SMS opt-in process is designed to be transparent, explicit, and compliant with all messaging regulations. This document outlines the complete journey a customer takes when providing consent to receive SMS messages from our salon.</p>
+        
+        <div class="important-note">
+            <strong>Important:</strong> All SMS messages are transactional in nature and directly related to the customer's appointment. We never send marketing messages through this system.
+        </div>
+    </section>
+    
+    <section>
+        <h2>Step-by-Step Opt-In Flow</h2>
+        
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-content">
+                <h3>Customer Books an Appointment</h3>
+                <p>The customer starts by booking an appointment through our online booking system, selecting their preferred service, barber, date, and time.</p>
+                <img src="https://i.imgur.com/OzyR2SL.png" alt="Booking step showing service selection" class="screenshot">
+                <p><em>Screenshot showing the service selection step of our booking process</em></p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-content">
+                <h3>Customer Information Form with Explicit SMS Consent</h3>
+                <p>On the final step of our booking process (Step 6), the customer provides their contact information. This form includes an <strong>explicit checkbox for SMS consent</strong> that is <strong>unchecked by default</strong>.</p>
+                <div class="opt-in-example">
+                    <strong>Actual SMS consent checkbox text:</strong><br>
+                    <input type="checkbox" id="example-checkbox"> <label for="example-checkbox">I consent to receive SMS notifications about my appointments at GoBarBerly Salon. Standard message and data rates may apply. Reply STOP to opt out at any time.</label>
+                </div>
+                <img src="https://i.imgur.com/eKQHVEw.png" alt="Customer information form with SMS opt-in checkbox" class="screenshot">
+                <p><em>Screenshot showing our customer information form with the explicit SMS consent checkbox</em></p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-content">
+                <h3>Customer Voluntarily Checks the Consent Box</h3>
+                <p>The customer must actively check the SMS consent box to indicate their willingness to receive SMS notifications. This box is never pre-checked, ensuring opt-in is explicit and voluntary.</p>
+                <img src="https://i.imgur.com/pWbgtNn.png" alt="Customer checking the SMS consent box" class="screenshot">
+                <p><em>Screenshot showing a customer checking the SMS consent checkbox</em></p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-content">
+                <h3>Booking Confirmation with Consent Acknowledgement</h3>
+                <p>After submitting the booking, customers see a confirmation screen that acknowledges their opt-in to SMS notifications.</p>
+                <img src="https://i.imgur.com/5Xt3tBD.png" alt="Booking confirmation with SMS consent acknowledgement" class="screenshot">
+                <p><em>Screenshot showing the booking confirmation with SMS consent acknowledgement</em></p>
+            </div>
+        </div>
+        
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-content">
+                <h3>Initial Welcome SMS Message</h3>
+                <p>Immediately after booking, customers who opted in receive an initial welcome SMS message that reiterates their opt-in and provides opt-out instructions.</p>
+                <div class="sms-example">
+                    Welcome to GoBarBerly Salon! You've successfully opted in to receive appointment notifications via text. Reply STOP at any time to opt out. Msg&Data rates may apply. Your appointment with Arjun Sharma is confirmed for May 3 at 10:00.
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section>
+        <h2>Consent Storage and Management</h2>
+        <p>We maintain auditable records of customer consent to receive SMS messages, including:</p>
+        <ul>
+            <li>Timestamp of when consent was provided</li>
+            <li>Source of consent (online booking system)</li>
+            <li>Phone number that provided consent</li>
+            <li>Exact language presented to the customer</li>
+            <li>Record of customer's affirmative action (checkbox selection)</li>
+        </ul>
+        
+        <div class="flow-section">
+            <h3>Example Consent Record from Our Database</h3>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Customer ID</td>
+                    <td>CUST-12345</td>
+                </tr>
+                <tr>
+                    <td>Phone Number</td>
+                    <td>+919967639488</td>
+                </tr>
+                <tr>
+                    <td>Consent Timestamp</td>
+                    <td>2025-05-02 10:45:23 UTC</td>
+                </tr>
+                <tr>
+                    <td>Consent Source</td>
+                    <td>Online Booking Form</td>
+                </tr>
+                <tr>
+                    <td>Consent Text Shown</td>
+                    <td>"I consent to receive SMS notifications about my appointments at GoBarBerly Salon. Standard message and data rates may apply. Reply STOP to opt out at any time."</td>
+                </tr>
+                <tr>
+                    <td>Consent Action</td>
+                    <td>Checkbox checked by user</td>
+                </tr>
+                <tr>
+                    <td>IP Address</td>
+                    <td>203.0.113.1</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+    
+    <section>
+        <h2>Types of SMS Messages Sent</h2>
+        <p>We only send transactional SMS messages directly related to customer appointments. These include:</p>
+        
+        <h3>1. Appointment Confirmation</h3>
+        <div class="sms-example">
+            Your appointment at GoBarBerly Salon is confirmed! Service: Haircut with Arjun Sharma on May 3 at 10:00. Ref: APT-TEST123. Reply HELP for assistance or STOP to cancel SMS notifications.
+        </div>
+        
+        <h3>2. Appointment Reminder (24 hours before)</h3>
+        <div class="sms-example">
+            Reminder: Your appointment at GoBarBerly Salon is tomorrow (May 3) at 10:00 for Haircut with Arjun Sharma. Please reply C to confirm or R to reschedule. Reply STOP to end messages.
+        </div>
+        
+        <h3>3. Post-Appointment Thank You</h3>
+        <div class="sms-example">
+            Thank you for visiting GoBarBerly Salon today! We hope you enjoyed your Haircut with Arjun Sharma. We'd love to see you again soon. Reply STOP to opt out of messages.
+        </div>
+    </section>
+    
+    <section>
+        <h2>Opt-Out Process</h2>
+        <p>Customers can easily opt out of SMS notifications at any time through multiple methods:</p>
+        
+        <h3>1. Reply "STOP" to Any Message</h3>
+        <p>Customers can reply with the word "STOP" to any SMS message they receive from us to immediately opt out of all future messages.</p>
+        
+        <h3>2. Contact Salon Directly</h3>
+        <p>Customers can call or email our salon to request removal from SMS notifications.</p>
+        
+        <h3>3. Online Account Settings</h3>
+        <p>Customers with online accounts can modify their communication preferences in their account settings.</p>
+        
+        <div class="flow-section">
+            <h3>Opt-Out Confirmation</h3>
+            <p>When a customer opts out via any method, they receive an immediate confirmation message:</p>
+            <div class="sms-example">
+                You have been unsubscribed from GoBarBerly Salon SMS notifications. No more messages will be sent. If this was in error, please contact us at 555-123-4567.
+            </div>
+        </div>
+    </section>
+    
+    <section>
+        <h2>Message Frequency</h2>
+        <p>Customers receive a maximum of 3 SMS messages per appointment:</p>
+        <ol>
+            <li>One confirmation message at the time of booking</li>
+            <li>One reminder message 24 hours before the appointment</li>
+            <li>One thank you message after the appointment (optional)</li>
+        </ol>
+        
+        <div class="important-note">
+            <strong>Note:</strong> We never send marketing or promotional content via SMS. All messages are directly related to the customer's appointment.
+        </div>
+    </section>
+    
+    <section>
+        <h2>Customer Support</h2>
+        <p>Customers can reply "HELP" to any SMS message to receive information about our messaging program and support options:</p>
+        <div class="sms-example">
+            GoBarBerly Salon: For help with your appointment or SMS notifications, please call us at 555-123-4567 or email support@gobarberly.com. Reply STOP to unsubscribe.
+        </div>
+    </section>
+    
+    <footer>
+        <p>This document was created for Twilio toll-free verification purposes.</p>
+        <p>Last Updated: May 2, 2025</p>
+        <p>GoBarBerly Salon &copy; 2025. All rights reserved.</p>
+        <p>Made with 🩷 in 🇮🇳</p>
+    </footer>
+</body>
+</html>
