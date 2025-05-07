@@ -454,3 +454,41 @@ body {
         text-align: center;
     }
 }
+/* Add these styles to your existing CSS file */
+.consent-group {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin-right: 10px;
+    margin-top: 3px;
+}
+
+.checkbox-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.consent-link {
+    margin-top: 8px;
+    font-size: 0.85rem;
+}
+
+.consent-link a {
+    color: #d4af37;
+    text-decoration: underline;
+}
+
+.consent-link a:hover {
+    text-decoration: none;
+}
