@@ -228,7 +228,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('phone').addEventListener('input', () => {
         bookingState.customerInfo.phone = phoneInput.getNumber();
     });
-    
+    // Add SMS consent checkbox event listener
+    document.getElementById('sms-consent').addEventListener('change', function() {
+        bookingState.smsConsent = this.checked;
+    });
     // Validate form
     function validateForm() {
         let isValid = true;
