@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
             email: '',
             phone: ''
         },
+        smsConsent: false,
         totalPrice: 0,
         totalDuration: 0,
         bookedSlots: {}, // Format: "YYYY-MM-DD": ["10:00", "14:30"]
