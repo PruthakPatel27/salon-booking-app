@@ -512,7 +512,8 @@ document.addEventListener('DOMContentLoaded', function() {
             addons: bookingState.addons,
             customerInfo: bookingState.customerInfo,
             totalPrice: bookingState.totalPrice,
-            totalDuration: bookingState.totalDuration
+            totalDuration: bookingState.totalDuration,
+            smsConsent: bookingState.smsConsent
         };
         
         // In a real application, this would be sent to your backend
@@ -535,11 +536,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Email confirmation
         sendEmailConfirmation(bookingData);
         
+        // Only send SMS if consent was given
+        if (bookingData.smsConsent) {
         // SMS confirmation
         sendSMSConfirmation(bookingData);
         
-        // WhatsApp confirmation
+        // WhatsApp confirmation (if applicable)
         sendWhatsAppConfirmation(bookingData);
+    }
     }
     
     // Send email confirmation function - COMPLETELY REVISED FOR ZAPIER
@@ -586,7 +590,8 @@ document.addEventListener('DOMContentLoaded', function() {
             barber: bookingData.barber.name,
             date: bookingData.date,
             time: bookingData.time,
-            appointmentId: bookingData.appointmentId
+            appointmentId: bookingData.appointmentId,
+            consentTimestamp: new Date().toISOString()
         });
         
         // Send data to Zapier webhook with query parameters
