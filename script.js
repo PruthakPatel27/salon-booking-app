@@ -1,4 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Google Calendar API configuration
+    const GOOGLE_API_KEY = 'AIzaSyBf0yU_MxKg5_xAi5F_50NWIFXani8SNVY'; // Replace with your Google API Key
+    const GOOGLE_CLIENT_ID = '272475247263-hfe3q59bj3o3hsqaa26epvljh3oq18jh.apps.googleusercontent.com'; // Replace with your Google Client ID
+    const GOOGLE_CALENDAR_ID = 'c_574cc7eeed3acc2456f2537d389d5631441626db9edef74346e03ff0869f4130@group.calendar.google.com'; // Replace with your Calendar ID
+    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+    const SCOPES = "https://www.googleapis.com/auth/calendar";
+    
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+
     // State management
     const bookingState = {
         currentStep: 1,
@@ -17,7 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
         totalPrice: 0,
         totalDuration: 0,
         bookedSlots: {}, // Format: "YYYY-MM-DD": ["10:00", "14:30"]
-        appointmentId: null
+        appointmentId: null,
+        // New properties for Google Calendar integration
+        googleCalendarEventId: null,
+        isAuthenticated: false
     };
     
     // Mock data for already booked slots
@@ -57,8 +71,284 @@ document.addEventListener('DOMContentLoaded', function() {
         onChange: function(selectedDates, dateStr) {
             bookingState.date = dateStr;
             updateSummary();
+            
+            // If using Google Calendar, fetch available slots
+            if (bookingState.isAuthenticated) {
+                fetchAvailableSlotsFromGoogleCalendar(dateStr);
+            }
         }
     });
+    
+    // Google API initialization
+    function initializeGoogleAPI() {
+        gapi.load('client', initGapiClient);
+        
+        // Function to init tokenClient
+        function initTokenClient() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined at request time
+            });
+            gisInited = true;
+            maybeEnableButtons();
+        }
+        
+        // Init gapi.client
+        async function initGapiClient() {
+            await gapi.client.init({
+                apiKey: GOOGLE_API_KEY,
+                discoveryDocs: DISCOVERY_DOCS,
+            });
+            gapiInited = true;
+            maybeEnableButtons();
+        }
+        
+        // Initialize Google Identity Services
+        initTokenClient();
+    }
+    
+    // Handle sign-in and enable buttons
+    function maybeEnableButtons() {
+        if (gapiInited && gisInited) {
+            // Now we can use the Google Calendar API
+            console.log('Google API initialized successfully');
+            
+            // Check if user is already authenticated
+            if (gapi.client.getToken() !== null) {
+                bookingState.isAuthenticated = true;
+                console.log('User is already authenticated');
+            }
+        }
+    }
+    
+    // Authenticate with Google
+    function handleAuthClick() {
+        tokenClient.callback = async (resp) => {
+            if (resp.error !== undefined) {
+                throw (resp);
+            }
+            bookingState.isAuthenticated = true;
+            console.log('Authentication successful');
+            
+            // If date is already selected, fetch slots
+            if (bookingState.date) {
+                fetchAvailableSlotsFromGoogleCalendar(bookingState.date);
+            }
+        };
+
+        if (gapi.client.getToken() === null) {
+            // Prompt the user for consent
+            tokenClient.requestAccessToken({prompt: 'consent'});
+        } else {
+            // Skip the consent prompt
+            tokenClient.requestAccessToken({prompt: ''});
+        }
+    }
+    
+    // Fetch available slots from Google Calendar
+    async function fetchAvailableSlotsFromGoogleCalendar(date) {
+        if (!bookingState.isAuthenticated) {
+            console.log('Not authenticated with Google. Using mock data.');
+            return;
+        }
+        
+        try {
+            // Get the start and end of the day in ISO format
+            const timeMin = new Date(`${date}T00:00:00`).toISOString();
+            const timeMax = new Date(`${date}T23:59:59`).toISOString();
+            
+            const response = await gapi.client.calendar.events.list({
+                'calendarId': GOOGLE_CALENDAR_ID,
+                'timeMin': timeMin,
+                'timeMax': timeMax,
+                'showDeleted': false,
+                'singleEvents': true,
+                'orderBy': 'startTime'
+            });
+            
+            // Process events to determine booked slots
+            const events = response.result.items;
+            const bookedSlotsForDate = [];
+            
+            if (events.length > 0) {
+                for (let i = 0; i < events.length; i++) {
+                    const event = events[i];
+                    const start = new Date(event.start.dateTime || event.start.date);
+                    const hour = start.getHours();
+                    const minute = start.getMinutes();
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    
+                    bookedSlotsForDate.push(timeStr);
+                }
+            }
+            
+            // Update state with booked slots from Google Calendar
+            bookingState.bookedSlots[date] = bookedSlotsForDate;
+            
+            // If we're on the time selection step, regenerate the time slots
+            if (bookingState.currentStep === 4) {
+                generateTimeSlots(date);
+            }
+            
+        } catch (error) {
+            console.error('Error fetching events from Google Calendar:', error);
+        }
+    }
+    
+    // Add an event to Google Calendar
+    async function addEventToGoogleCalendar(bookingData) {
+        if (!bookingState.isAuthenticated) {
+            console.log('Not authenticated with Google. Skipping calendar event creation.');
+            return null;
+        }
+        
+        try {
+            const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
+            const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
+            
+            // Format add-ons for description if any
+            let addonsText = '';
+            if (bookingData.addons.length > 0) {
+                addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ');
+            }
+            
+            // Create event resource
+            const event = {
+                'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
+                'location': 'GoBarBerly Salon',
+                'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
+                'start': {
+                    'dateTime': startDateTime.toISOString(),
+                    'timeZone': 'Asia/Kolkata'
+                },
+                'end': {
+                    'dateTime': endDateTime.toISOString(),
+                    'timeZone': 'Asia/Kolkata'
+                },
+                'reminders': {
+                    'useDefault': false,
+                    'overrides': [
+                        {'method': 'email', 'minutes': 24 * 60},
+                        {'method': 'popup', 'minutes': 60}
+                    ]
+                }
+            };
+            
+            // Add event to calendar
+            const request = gapi.client.calendar.events.insert({
+                'calendarId': GOOGLE_CALENDAR_ID,
+                'resource': event
+            });
+            
+            const response = await new Promise((resolve, reject) => {
+                request.execute(resp => {
+                    if (resp.error) {
+                        reject(resp.error);
+                    } else {
+                        resolve(resp);
+                    }
+                });
+            });
+            
+            console.log('Event created: ' + response.htmlLink);
+            return response.id; // Return the event ID for future reference
+            
+        } catch (error) {
+            console.error('Error adding event to Google Calendar:', error);
+            return null;
+        }
+    }
+    
+    // Update an event in Google Calendar
+    async function updateEventInGoogleCalendar(eventId, bookingData) {
+        if (!bookingState.isAuthenticated || !eventId) {
+            console.log('Not authenticated or no event ID provided. Skipping calendar update.');
+            return false;
+        }
+        
+        try {
+            const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
+            const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
+            
+            // Format add-ons for description if any
+            let addonsText = '';
+            if (bookingData.addons.length > 0) {
+                addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ');
+            }
+            
+            // Create updated event resource
+            const event = {
+                'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
+                'location': 'GoBarBerly Salon',
+                'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
+                'start': {
+                    'dateTime': startDateTime.toISOString(),
+                    'timeZone': 'Asia/Kolkata'
+                },
+                'end': {
+                    'dateTime': endDateTime.toISOString(),
+                    'timeZone': 'Asia/Kolkata'
+                }
+            };
+            
+            // Update event in calendar
+            const request = gapi.client.calendar.events.update({
+                'calendarId': GOOGLE_CALENDAR_ID,
+                'eventId': eventId,
+                'resource': event
+            });
+            
+            const response = await new Promise((resolve, reject) => {
+                request.execute(resp => {
+                    if (resp.error) {
+                        reject(resp.error);
+                    } else {
+                        resolve(resp);
+                    }
+                });
+            });
+            
+            console.log('Event updated: ' + response.htmlLink);
+            return true;
+            
+        } catch (error) {
+            console.error('Error updating event in Google Calendar:', error);
+            return false;
+        }
+    }
+    
+    // Delete an event from Google Calendar
+    async function deleteEventFromGoogleCalendar(eventId) {
+        if (!bookingState.isAuthenticated || !eventId) {
+            console.log('Not authenticated or no event ID provided. Skipping calendar deletion.');
+            return false;
+        }
+        
+        try {
+            const request = gapi.client.calendar.events.delete({
+                'calendarId': GOOGLE_CALENDAR_ID,
+                'eventId': eventId
+            });
+            
+            await new Promise((resolve, reject) => {
+                request.execute(resp => {
+                    if (resp.error) {
+                        reject(resp.error);
+                    } else {
+                        resolve(resp);
+                    }
+                });
+            });
+            
+            console.log('Event deleted successfully');
+            return true;
+            
+        } catch (error) {
+            console.error('Error deleting event from Google Calendar:', error);
+            return false;
+        }
+    }
     
     // Service Selection
     const serviceCards = document.querySelectorAll('.service-card');
@@ -498,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function to submit booking to backend
-    function submitBooking() {
+    async function submitBooking() {
         // Generate a unique appointment ID
         bookingState.appointmentId = generateAppointmentId();
         
@@ -519,6 +809,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // In a real application, this would be sent to your backend
         console.log('Booking submitted:', bookingData);
         
+        // Add to Google Calendar if authenticated
+        if (bookingState.isAuthenticated) {
+            try {
+                const eventId = await addEventToGoogleCalendar(bookingData);
+                if (eventId) {
+                    bookingState.googleCalendarEventId = eventId;
+                    console.log('Event added to Google Calendar with ID:', eventId);
+                }
+            } catch (error) {
+                console.error('Failed to add event to Google Calendar:', error);
+            }
+        }
+        
         // Mock successful booking - Add the time slot to booked slots
         if (!bookingState.bookedSlots[bookingState.date]) {
             bookingState.bookedSlots[bookingState.date] = [];
@@ -538,15 +841,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Only send SMS if consent was given
         if (bookingData.smsConsent) {
-        // SMS confirmation
-        sendSMSConfirmation(bookingData);
-        
-        // WhatsApp confirmation (if applicable)
-        sendWhatsAppConfirmation(bookingData);
-    }
+            // SMS confirmation
+            sendSMSConfirmation(bookingData);
+            
+            // WhatsApp confirmation (if applicable)
+            sendWhatsAppConfirmation(bookingData);
+        }
     }
     
-    // Send email confirmation function - COMPLETELY REVISED FOR ZAPIER
+    // Send email confirmation function - Uses Zapier webhook
     function sendEmailConfirmation(bookingData) {
         // Create query parameters
         const params = new URLSearchParams({
@@ -562,6 +865,13 @@ document.addEventListener('DOMContentLoaded', function() {
             addons: bookingData.addons.map(addon => addon.name).join(', '),
             appointmentId: bookingData.appointmentId
         });
+        
+        // Add rescheduling info if applicable
+        if (bookingData.isRescheduled) {
+            params.append('isRescheduled', 'true');
+            params.append('oldDate', bookingData.oldDate);
+            params.append('oldTime', bookingData.oldTime);
+        }
         
         // Send data to Zapier webhook with query parameters
         fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
@@ -579,7 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send SMS confirmation function - COMPLETELY REVISED FOR ZAPIER
+    // Send SMS confirmation function - Uses Zapier webhook
     function sendSMSConfirmation(bookingData) {
         // Create query parameters
         const params = new URLSearchParams({
@@ -593,6 +903,13 @@ document.addEventListener('DOMContentLoaded', function() {
             appointmentId: bookingData.appointmentId,
             consentTimestamp: new Date().toISOString()
         });
+        
+        // Add rescheduling info if applicable
+        if (bookingData.isRescheduled) {
+            params.append('isRescheduled', 'true');
+            params.append('oldDate', bookingData.oldDate);
+            params.append('oldTime', bookingData.oldTime);
+        }
         
         // Send data to Zapier webhook with query parameters
         fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
@@ -610,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Send WhatsApp confirmation function - COMPLETELY REVISED FOR ZAPIER
+    // Send WhatsApp confirmation function - Uses Zapier webhook
     function sendWhatsAppConfirmation(bookingData) {
         // Create query parameters
         const params = new URLSearchParams({
@@ -624,6 +941,13 @@ document.addEventListener('DOMContentLoaded', function() {
             price: bookingData.totalPrice.toString(),
             appointmentId: bookingData.appointmentId
         });
+        
+        // Add rescheduling info if applicable
+        if (bookingData.isRescheduled) {
+            params.append('isRescheduled', 'true');
+            params.append('oldDate', bookingData.oldDate);
+            params.append('oldTime', bookingData.oldTime);
+        }
         
         // Send data to Zapier webhook with query parameters
         fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
@@ -686,7 +1010,11 @@ END:VCALENDAR`;
     });
     
     // Reschedule button handler
-    document.getElementById('reschedule-btn').addEventListener('click', function() {
+    document.getElementById('reschedule-btn').addEventListener('click', async function() {
+        // Store old date and time for later reference (to free up the slot)
+        const oldDate = bookingState.date;
+        const oldTime = bookingState.time;
+        
         // Reset to step 3 (date selection)
         bookingState.currentStep = 3;
         goToStep(3);
@@ -695,16 +1023,158 @@ END:VCALENDAR`;
         prevBtn.style.display = 'block';
         nextBtn.style.display = 'block';
         nextBtn.textContent = 'Next';
+        
+        // Override the next button functionality temporarily for rescheduling
+        const originalNextFn = nextBtn.onclick;
+        nextBtn.onclick = async function() {
+            // Normal next button behavior for steps 3-5
+            if (bookingState.currentStep >= 3 && bookingState.currentStep <= 5) {
+                // Use the existing next button logic
+                const event = new Event('click');
+                nextBtn.dispatchEvent(event);
+            } 
+            // When confirming the new appointment time (after step 6)
+            else if (bookingState.currentStep === 6) {
+                // Validate form
+                if (validateForm()) {
+                    // Remove the old booking slot
+                    if (oldDate && oldTime) {
+                        const bookedSlotsForOldDate = bookingState.bookedSlots[oldDate] || [];
+                        const oldIndex = bookedSlotsForOldDate.indexOf(oldTime);
+                        if (oldIndex > -1) {
+                            bookedSlotsForOldDate.splice(oldIndex, 1);
+                            console.log(`Freed up slot: ${oldDate} at ${oldTime}`);
+                        }
+                    }
+                    
+                    // Update the Google Calendar event if we have an ID
+                    if (bookingState.googleCalendarEventId) {
+                        try {
+                            const bookingData = {
+                                appointmentId: bookingState.appointmentId,
+                                service: bookingState.service,
+                                barber: bookingState.barber,
+                                date: bookingState.date,
+                                time: bookingState.time,
+                                addons: bookingState.addons,
+                                customerInfo: bookingState.customerInfo,
+                                totalPrice: bookingState.totalPrice,
+                                totalDuration: bookingState.totalDuration
+                            };
+                            
+                            const updated = await updateEventInGoogleCalendar(
+                                bookingState.googleCalendarEventId, 
+                                bookingData
+                            );
+                            
+                            if (updated) {
+                                console.log('Google Calendar event updated successfully');
+                            } else {
+                                console.warn('Failed to update Google Calendar event');
+                            }
+                        } catch (error) {
+                            console.error('Error updating Google Calendar event:', error);
+                        }
+                    }
+                    
+                    // Add the new booking slot
+                    if (!bookingState.bookedSlots[bookingState.date]) {
+                        bookingState.bookedSlots[bookingState.date] = [];
+                    }
+                    bookingState.bookedSlots[bookingState.date].push(bookingState.time);
+                    
+                    // Send reschedule notifications
+                    const bookingData = {
+                        appointmentId: bookingState.appointmentId,
+                        service: bookingState.service,
+                        barber: bookingState.barber,
+                        date: bookingState.date,
+                        time: bookingState.time,
+                        addons: bookingState.addons,
+                        customerInfo: bookingState.customerInfo,
+                        totalPrice: bookingState.totalPrice,
+                        totalDuration: bookingState.totalDuration,
+                        smsConsent: bookingState.smsConsent,
+                        isRescheduled: true,
+                        oldDate: oldDate,
+                        oldTime: oldTime
+                    };
+                    
+                    sendConfirmations(bookingData);
+                    
+                    // Show the confirmation step
+                    goToStep('confirmation');
+                    
+                    // Reset the next button function
+                    nextBtn.onclick = originalNextFn;
+                }
+            }
+        };
     });
     
     // Cancel button handler
-    document.getElementById('cancel-btn').addEventListener('click', function() {
+    document.getElementById('cancel-btn').addEventListener('click', async function() {
         if (confirm('Are you sure you want to cancel your appointment?')) {
             // Remove the booking from booked slots
             const bookedSlotsForDate = bookingState.bookedSlots[bookingState.date] || [];
             const index = bookedSlotsForDate.indexOf(bookingState.time);
             if (index > -1) {
                 bookedSlotsForDate.splice(index, 1);
+                console.log(`Freed up slot: ${bookingState.date} at ${bookingState.time}`);
+            }
+            
+            // Delete the event from Google Calendar if we have an ID
+            if (bookingState.googleCalendarEventId) {
+                try {
+                    const deleted = await deleteEventFromGoogleCalendar(bookingState.googleCalendarEventId);
+                    if (deleted) {
+                        console.log('Google Calendar event deleted successfully');
+                    } else {
+                        console.warn('Failed to delete Google Calendar event');
+                    }
+                } catch (error) {
+                    console.error('Error deleting Google Calendar event:', error);
+                }
+            }
+            
+            // Send cancellation notifications
+            const bookingData = {
+                appointmentId: bookingState.appointmentId,
+                service: bookingState.service,
+                barber: bookingState.barber,
+                date: bookingState.date,
+                time: bookingState.time,
+                customerInfo: bookingState.customerInfo,
+                smsConsent: bookingState.smsConsent,
+                isCancelled: true
+            };
+            
+            // Send cancellation notifications
+            if (bookingData.smsConsent) {
+                // Create query parameters for cancellation
+                const params = new URLSearchParams({
+                    messageType: 'cancellation',
+                    phoneNumber: bookingData.customerInfo.phone,
+                    customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
+                    appointmentId: bookingData.appointmentId,
+                    date: bookingData.date,
+                    time: bookingData.time
+                });
+                
+                // Send data to Zapier webhook with query parameters
+                fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
+                    method: 'GET'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Cancellation notification sent successfully');
+                    } else {
+                        console.error('Failed to send cancellation notification');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending cancellation notification:', error);
+                });
             }
             
             // Reset to step 1
@@ -733,6 +1203,7 @@ END:VCALENDAR`;
                 email: '',
                 phone: ''
             };
+            bookingState.googleCalendarEventId = null;
             
             // Go to step 1
             goToStep(1);
@@ -751,4 +1222,11 @@ END:VCALENDAR`;
     // Initialize the booking form
     updateSummary();
     goToStep(1);
+    
+    // Initialize Google API if script is loaded
+    if (typeof gapi !== 'undefined') {
+        initializeGoogleAPI();
+    } else {
+        console.warn('Google API not loaded. Calendar integration will be disabled.');
+    }
 });
