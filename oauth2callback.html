@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar Authentication</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d4af37;
+        }
+        .success-icon {
+            font-size: 64px;
+            color: #34A853;
+            margin-bottom: 20px;
+        }
+        .error-icon {
+            font-size: 64px;
+            color: #EA4335;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            background-color: #d4af37;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="success-container" style="display: none;">
+            <div class="success-icon">✓</div>
+            <h1>Authentication Successful</h1>
+            <div class="message">
+                Google Calendar has been successfully connected to your GoBarBerly Salon account.
+                You can now close this window.
+            </div>
+        </div>
+        
+        <div id="error-container" style="display: none;">
+            <div class="error-icon">✗</div>
+            <h1>Authentication Failed</h1>
+            <div class="message" id="error-message">
+                There was a problem connecting to Google Calendar. Please try again.
+            </div>
+        </div>
+        
+        <a href="/demoaccount" class="button">Return to Booking App</a>
+    </div>
+    
+    <script>
+        // Parse URL parameters
+        function getHashParams() {
+            const hash = window.location.hash.substring(1);
+            const params = {};
+            hash.split('&').forEach(function(pair) {
+                const parts = pair.split('=');
+                params[parts[0]] = decodeURIComponent(parts[1]);
+            });
+            return params;
+        }
+        
+        function getQueryParams() {
+            const search = window.location.search.substring(1);
+            const params = {};
+            search.split('&').forEach(function(pair) {
+                const parts = pair.split('=');
+                params[parts[0]] = decodeURIComponent(parts[1]);
+            });
+            return params;
+        }
+        
+        window.onload = function() {
+            // Check for hash params (token)
+            const hashParams = getHashParams();
+            
+            // Check for query params (error)
+            const queryParams = getQueryParams();
+            
+            if (hashParams.access_token) {
+                // Success - token received
+                document.getElementById('success-container').style.display = 'block';
+                
+                // Save the token locally
+                localStorage.setItem('googleCalendarToken', hashParams.access_token);
+                
+                // Send message to parent window if opened as popup
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'oauth_callback',
+                        token: hashParams.access_token
+                    }, window.location.origin);
+                    
+                    // Close popup after a short delay
+                    setTimeout(function() {
+                        window.close();
+                    }, 2000);
+                }
+            } else if (queryParams.error) {
+                // Error occurred
+                document.getElementById('error-container').style.display = 'block';
+                document.getElementById('error-message').textContent = 
+                    'Authentication error: ' + queryParams.error;
+            } else {
+                // No token or error - something went wrong
+                document.getElementById('error-container').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
