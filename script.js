@@ -811,112 +811,69 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
         }
     }, true); // Use capturing phase to run before other handlers
 });
-    // Cancel button handler
-    document.getElementById('cancel-btn').addEventListener('click', async function() {
-        if (confirm('Are you sure you want to cancel your appointment?')) {
-            // Remove the booking from booked slots
-            const bookedSlotsForDate = bookingState.bookedSlots[bookingState.date] || [];
-            const index = bookedSlotsForDate.indexOf(bookingState.time);
-            if (index > -1) {
-                bookedSlotsForDate.splice(index, 1);
-                console.log(`Freed up slot: ${bookingState.date} at ${bookingState.time}`);
-            }
-            
-            // Delete the event from Google Calendar if we have an ID
-            if (window.googleCalendarIntegration && bookingState.googleCalendarEventId) {
-                try {
-                    const deleted = await window.googleCalendarIntegration.deleteEventFromGoogleCalendar(bookingState.googleCalendarEventId);
-                    if (deleted) {
-                        console.log('Google Calendar event deleted successfully');
-                    } else {
-                        console.warn('Failed to delete Google Calendar event');
-                    }
-                } catch (error) {
-                    console.error('Error deleting Google Calendar event:', error);
-                }
-            }
-            
-            // Send cancellation notifications
-            const bookingData = {
-                appointmentId: bookingState.appointmentId,
-                service: bookingState.service,
-                barber: bookingState.barber,
-                date: bookingState.date,
-                time: bookingState.time,
-                customerInfo: bookingState.customerInfo,
-                smsConsent: bookingState.smsConsent,
-                isCancelled: true
-            };
-            
-            // Send cancellation notifications
-            if (bookingData.smsConsent) {
-                // Create query parameters for cancellation
-                const params = new URLSearchParams({
-                    messageType: 'cancellation',
-                    phoneNumber: bookingData.customerInfo.phone,
-                    customerName: `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName}`,
-                    appointmentId: bookingData.appointmentId,
-                    date: bookingData.date,
-                    time: bookingData.time
-                });
-                
-                // Send data to Zapier webhook with query parameters
-                fetch(`https://hooks.zapier.com/hooks/catch/22747438/2pcer1x/?${params.toString()}`, {
-                    method: 'GET'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        console.log('Cancellation notification sent successfully');
-                    } else {
-                        console.error('Failed to send cancellation notification');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error sending cancellation notification:', error);
-                });
-            }
-            
-            // Reset to step 1
-            bookingState.currentStep = 1;
-            
-            // Clear all selections
-            document.querySelectorAll('.service-card, .barber-card, .addon-card, .time-slot').forEach(card => {
-                card.classList.remove('selected');
-            });
-            
-            // Clear form fields
-            document.getElementById('first-name').value = '';
-            document.getElementById('last-name').value = '';
-            document.getElementById('email').value = '';
-            document.getElementById('phone').value = '';
-            
-            // Reset booking state
-            bookingState.service = null;
-            bookingState.barber = null;
-            bookingState.date = null;
-            bookingState.time = null;
-            bookingState.addons = [];
-            bookingState.customerInfo = {
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: ''
-            };
-            bookingState.googleCalendarEventId = null;
-            
-            // Go to step 1
-            goToStep(1);
-            
-            // Show navigation buttons again
-            prevBtn.style.display = 'block';
-            nextBtn.style.display = 'block';
-            
-            // Update summary
-            updateSummary();
-            
-            alert('Your appointment has been cancelled.');
+  // Cancel button handler
+document.getElementById('cancel-btn').addEventListener('click', function() {
+    // Show custom confirmation dialog instead of browser's confirm()
+    const customDialog = document.getElementById('custom-confirm-dialog');
+    customDialog.style.display = 'block';
+    
+    // Handle "No" button click
+    document.getElementById('custom-cancel-no').onclick = function() {
+        customDialog.style.display = 'none';
+    };
+    
+    // Handle "Yes" button click
+    document.getElementById('custom-cancel-yes').onclick = function() {
+        customDialog.style.display = 'none';
+        
+        // Remove the booking from booked slots
+        const bookedSlotsForDate = bookingState.bookedSlots[bookingState.date] || [];
+        const index = bookedSlotsForDate.indexOf(bookingState.time);
+        if (index > -1) {
+            bookedSlotsForDate.splice(index, 1);
         }
-    });
+        
+        // Reset to step 1
+        bookingState.currentStep = 1;
+        
+        // Clear all selections
+        document.querySelectorAll('.service-card, .barber-card, .addon-card, .time-slot').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Clear form fields
+        document.getElementById('first-name').value = '';
+        document.getElementById('last-name').value = '';
+        document.getElementById('email').value = '';
+        document.getElementById('phone').value = '';
+        
+        // Reset booking state
+        bookingState.service = null;
+        bookingState.barber = null;
+        bookingState.date = null;
+        bookingState.time = null;
+        bookingState.addons = [];
+        bookingState.customerInfo = {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: ''
+        };
+        
+        // Go to step 1
+        goToStep(1);
+        
+        // Show navigation buttons again
+        prevBtn.style.display = 'block';
+        nextBtn.style.display = 'block';
+        
+        // Update summary
+        updateSummary();
+        
+        // Show success message
+        alert('Your appointment has been cancelled.');
+    };
+});
     
     // Initialize the booking form
     updateSummary();
