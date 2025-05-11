@@ -1,9 +1,9 @@
 // Google Calendar API integration file
 (function() {
     // Google Calendar API configuration
-    const GOOGLE_API_KEY = 'YOUR_API_KEY'; // Replace with your Google API Key
-    const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your Google Client ID
-    const GOOGLE_CALENDAR_ID = 'YOUR_CALENDAR_ID@group.calendar.google.com'; // Replace with your Calendar ID
+    const GOOGLE_API_KEY = 'AIzaSyBf0yU_MxKg5_xAi5F_50NWIFXani8SNVY'; // Replace with your Google API Key
+    const GOOGLE_CLIENT_ID = '272475247263-hfe3q59bj3o3hsqaa26epvljh3oq18jh.apps.googleusercontent.com'; // Replace with your Google Client ID
+    const GOOGLE_CALENDAR_ID = 'c_574cc7eeed3acc2456f2537d389d5631441626db9edef74346e03ff0869f4130@group.calendar.google.com'; // Replace with your Calendar ID
     const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
     const SCOPES = "https://www.googleapis.com/auth/calendar";
     
