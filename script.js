@@ -733,6 +733,59 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
     const oldDate = bookingState.date;
     const oldTime = bookingState.time;
     
+    // Save the original next button function
+    const originalNextFunction = nextBtn.onclick;
+    
+    // Function for handling rescheduled appointment submission
+    function handleRescheduleSubmit() {
+        if (validateForm()) {
+            // Remove the old booking slot
+            if (oldDate && oldTime) {
+                const bookedSlotsForOldDate = bookingState.bookedSlots[oldDate] || [];
+                const oldIndex = bookedSlotsForOldDate.indexOf(oldTime);
+                if (oldIndex > -1) {
+                    bookedSlotsForOldDate.splice(oldIndex, 1);
+                    console.log(`Freed up slot: ${oldDate} at ${oldTime}`);
+                }
+            }
+            
+            // Add the new booking slot
+            if (!bookingState.bookedSlots[bookingState.date]) {
+                bookingState.bookedSlots[bookingState.date] = [];
+            }
+            bookingState.bookedSlots[bookingState.date].push(bookingState.time);
+            
+            // Send reschedule notifications
+            const bookingData = {
+                appointmentId: bookingState.appointmentId,
+                service: bookingState.service,
+                barber: bookingState.barber,
+                date: bookingState.date,
+                time: bookingState.time,
+                addons: bookingState.addons,
+                customerInfo: bookingState.customerInfo,
+                totalPrice: bookingState.totalPrice,
+                totalDuration: bookingState.totalDuration,
+                smsConsent: bookingState.smsConsent,
+                isRescheduled: true,
+                oldDate: oldDate,
+                oldTime: oldTime
+            };
+            
+            sendConfirmations(bookingData);
+            goToStep('confirmation');
+            
+            // Restore original next button behavior
+            nextBtn.onclick = originalNextFunction;
+        }
+    }
+    
+    // Now we need a way to track if we're at the last step of rescheduling
+    // without interfering with the normal flow
+    
+    // We'll use a modified approach: let the regular navigation work,
+    // but intercept at step 6
+    
     // Reset to step 3 (date selection)
     bookingState.currentStep = 3;
     goToStep(3);
@@ -742,112 +795,21 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
     nextBtn.style.display = 'block';
     nextBtn.textContent = 'Next';
     
-    // Create a reschedule flag in the booking state
+    // Create a rescheduling flag
     bookingState.isRescheduling = true;
     
-    // Clone the original next button handler
-    const originalClickHandler = nextBtn.onclick;
-    
-    // Remove the current event listener
-    nextBtn.removeEventListener('click', originalClickHandler);
-    
-    // Add a completely new click handler for rescheduling
-    nextBtn.addEventListener('click', rescheduleNextHandler);
-    
-    function rescheduleNextHandler(e) {
-        console.log('Reschedule handler - Current step:', bookingState.currentStep);
-        
-        // Validate current step
-        let canProceed = true;
-        
-        switch (bookingState.currentStep) {
-            case 3:
-                canProceed = bookingState.date !== null;
-                if (canProceed) {
-                    console.log('Date is valid, proceeding to step 4');
-                    bookingState.currentStep = 4;
-                    goToStep(4);
-                }
-                break;
-            case 4:
-                canProceed = bookingState.time !== null;
-                if (canProceed) {
-                    console.log('Time is valid, proceeding to step 5');
-                    bookingState.currentStep = 5;
-                    goToStep(5);
-                }
-                break;
-            case 5:
-                console.log('Add-ons selected, proceeding to step 6');
-                bookingState.currentStep = 6;
-                goToStep(6);
-                break;
-            case 6:
-                canProceed = validateForm();
-                if (canProceed) {
-                    console.log('Form is valid, finalizing reschedule');
-                    completeReschedule();
-                }
-                break;
+    // Add a temporary event listener that runs before the regular click handler
+    nextBtn.addEventListener('click', function rescheduleCheck(e) {
+        // If we're on step 6 and in rescheduling mode, handle differently
+        if (bookingState.currentStep === 6 && bookingState.isRescheduling) {
+            e.stopImmediatePropagation(); // Prevent other handlers from running
+            handleRescheduleSubmit();
+            
+            // Remove this temporary handler after we're done
+            nextBtn.removeEventListener('click', rescheduleCheck);
+            bookingState.isRescheduling = false;
         }
-        
-        if (!canProceed) {
-            // Add visual feedback for the error
-            const currentStepElement = document.querySelector(`.booking-step[data-step="${bookingState.currentStep}"]`);
-            currentStepElement.classList.add('error');
-            setTimeout(() => {
-                currentStepElement.classList.remove('error');
-            }, 500);
-        }
-    }
-    
-    function completeReschedule() {
-        // Remove the old booking slot
-        if (oldDate && oldTime) {
-            const bookedSlotsForOldDate = bookingState.bookedSlots[oldDate] || [];
-            const oldIndex = bookedSlotsForOldDate.indexOf(oldTime);
-            if (oldIndex > -1) {
-                bookedSlotsForOldDate.splice(oldIndex, 1);
-                console.log(`Freed up slot: ${oldDate} at ${oldTime}`);
-            }
-        }
-        
-        // Add the new booking slot
-        if (!bookingState.bookedSlots[bookingState.date]) {
-            bookingState.bookedSlots[bookingState.date] = [];
-        }
-        bookingState.bookedSlots[bookingState.date].push(bookingState.time);
-        
-        // Prepare reschedule notification data
-        const bookingData = {
-            appointmentId: bookingState.appointmentId,
-            service: bookingState.service,
-            barber: bookingState.barber,
-            date: bookingState.date,
-            time: bookingState.time,
-            addons: bookingState.addons,
-            customerInfo: bookingState.customerInfo,
-            totalPrice: bookingState.totalPrice,
-            totalDuration: bookingState.totalDuration,
-            smsConsent: bookingState.smsConsent,
-            isRescheduled: true,
-            oldDate: oldDate,
-            oldTime: oldTime
-        };
-        
-        // Send notifications
-        sendConfirmations(bookingData);
-        
-        // Show the confirmation step
-        goToStep('confirmation');
-        
-        // Clean up: reset the reschedule process
-        nextBtn.removeEventListener('click', rescheduleNextHandler);
-        nextBtn.addEventListener('click', originalClickHandler);
-        bookingState.isRescheduling = false;
-        
-        console.log('Reschedule completed, original handler restored');
-    }
+    }, true); // Use capturing phase to run before other handlers
 });
     // Cancel button handler
     document.getElementById('cancel-btn').addEventListener('click', async function() {
