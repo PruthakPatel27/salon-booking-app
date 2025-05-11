@@ -811,7 +811,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
         }
     }, true); // Use capturing phase to run before other handlers
 });
-  // Cancel button handler
+// Cancel button handler
 document.getElementById('cancel-btn').addEventListener('click', function() {
     // Show custom confirmation dialog instead of browser's confirm()
     const customDialog = document.getElementById('custom-confirm-dialog');
@@ -870,11 +870,40 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
         // Update summary
         updateSummary();
         
-        // Show success message
-        alert('Your appointment has been cancelled.');
+        // Show custom success message instead of alert()
+        showCustomSuccessMessage('Your appointment has been cancelled.');
     };
 });
+
+// Add this new function at the end of your script.js file
+function showCustomSuccessMessage(message) {
+    // Create success notification element
+    const successNotification = document.createElement('div');
+    successNotification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #34c759;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        text-align: center;
+        font-weight: bold;
+        min-width: 300px;
+    `;
+    successNotification.innerText = message;
     
+    // Add to document
+    document.body.appendChild(successNotification);
+    
+    // Remove after 3 seconds
+    setTimeout(function() {
+        document.body.removeChild(successNotification);
+    }, 3000);
+}
     // Initialize the booking form
     updateSummary();
     goToStep(1);
