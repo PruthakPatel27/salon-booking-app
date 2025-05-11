@@ -727,114 +727,144 @@ END:VCALENDAR`;
         link.click();
         document.body.removeChild(link);
     });
-    
     // Reschedule button handler
-    document.getElementById('reschedule-btn').addEventListener('click', async function() {
-        // Store old date and time for later reference (to free up the slot)
-        const oldDate = bookingState.date;
-        const oldTime = bookingState.time;
-        
-        // Reset to step 3 (date selection)
-        bookingState.currentStep = 3;
-        goToStep(3);
-        
-        // Show navigation buttons again
-        prevBtn.style.display = 'block';
-        nextBtn.style.display = 'block';
-        nextBtn.textContent = 'Next';
-        
-        // Override the next button functionality temporarily for rescheduling
-        const originalNextFn = nextBtn.onclick;
-        nextBtn.onclick = async function() {
-            // Normal next button behavior for steps 3-5
-            if (bookingState.currentStep >= 3 && bookingState.currentStep <= 5) {
-                // Use the existing next button logic
-                const event = new Event('click');
-                nextBtn.dispatchEvent(event);
-            } 
-            // When confirming the new appointment time (after step 6)
-            else if (bookingState.currentStep === 6) {
-                // Validate form
-                if (validateForm()) {
-                    // Remove the old booking slot
-                    if (oldDate && oldTime) {
-                        const bookedSlotsForOldDate = bookingState.bookedSlots[oldDate] || [];
-                        const oldIndex = bookedSlotsForOldDate.indexOf(oldTime);
-                        if (oldIndex > -1) {
-                            bookedSlotsForOldDate.splice(oldIndex, 1);
-                            console.log(`Freed up slot: ${oldDate} at ${oldTime}`);
-                        }
-                    }
-                    
-                    // Update the Google Calendar event if we have an ID
-                    if (window.googleCalendarIntegration && bookingState.googleCalendarEventId) {
-                        try {
-                            const bookingData = {
-                                appointmentId: bookingState.appointmentId,
-                                service: bookingState.service,
-                                barber: bookingState.barber,
-                                date: bookingState.date,
-                                time: bookingState.time,
-                                addons: bookingState.addons,
-                                customerInfo: bookingState.customerInfo,
-                                totalPrice: bookingState.totalPrice,
-                                totalDuration: bookingState.totalDuration
-                            };
-                            
-                            const updated = await window.googleCalendarIntegration.updateEventInGoogleCalendar(
-                                bookingState.googleCalendarEventId, 
-                                bookingData
-                            );
-                            
-                            if (updated) {
-                                console.log('Google Calendar event updated successfully');
-                            } else {
-                                console.warn('Failed to update Google Calendar event');
-                            }
-                        } catch (error) {
-                            console.error('Error updating Google Calendar event:', error);
-                        }
-                    }
-                    
-                    // Add the new booking slot
-                    if (!bookingState.bookedSlots[bookingState.date]) {
-                        bookingState.bookedSlots[bookingState.date] = [];
-                    }
-                    // Add the new booking slot
-                    if (!bookingState.bookedSlots[bookingState.date]) {
-                        bookingState.bookedSlots[bookingState.date] = [];
-                    }
-                    bookingState.bookedSlots[bookingState.date].push(bookingState.time);
-                    
-                    // Send reschedule notifications
-                    const bookingData = {
-                        appointmentId: bookingState.appointmentId,
-                        service: bookingState.service,
-                        barber: bookingState.barber,
-                        date: bookingState.date,
-                        time: bookingState.time,
-                        addons: bookingState.addons,
-                        customerInfo: bookingState.customerInfo,
-                        totalPrice: bookingState.totalPrice,
-                        totalDuration: bookingState.totalDuration,
-                        smsConsent: bookingState.smsConsent,
-                        isRescheduled: true,
-                        oldDate: oldDate,
-                        oldTime: oldTime
-                    };
-                    
-                    sendConfirmations(bookingData);
-                    
-                    // Show the confirmation step
-                    goToStep('confirmation');
-                    
-                    // Reset the next button function
-                    nextBtn.onclick = originalNextFn;
-                }
-            }
-        };
-    });
+document.getElementById('reschedule-btn').addEventListener('click', async function() {
+    // Store old date and time for later reference (to free up the slot)
+    const oldDate = bookingState.date;
+    const oldTime = bookingState.time;
     
+    // Reset to step 3 (date selection)
+    bookingState.currentStep = 3;
+    goToStep(3);
+    
+    // Show navigation buttons again
+    prevBtn.style.display = 'block';
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = 'Next';
+    
+    // Store original next button functionality
+    const originalNextFn = nextBtn.onclick;
+    
+    // Override the next button functionality temporarily for rescheduling
+    nextBtn.onclick = function(event) {
+        // For steps 3, 4, and 5, use normal progression
+        if (bookingState.currentStep >= 3 && bookingState.currentStep <= 5) {
+            // Prevent multiple event handlers
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Validate current step
+            let canProceed = true;
+            
+            switch (bookingState.currentStep) {
+                case 3:
+                    canProceed = bookingState.date !== null;
+                    break;
+                case 4:
+                    canProceed = bookingState.time !== null;
+                    break;
+                case 5:
+                    // Add-ons are optional
+                    canProceed = true;
+                    break;
+            }
+            
+            if (canProceed) {
+                bookingState.currentStep++;
+                goToStep(bookingState.currentStep);
+            } else {
+                // Add visual feedback for the error
+                const currentStepElement = document.querySelector(`.booking-step[data-step="${bookingState.currentStep}"]`);
+                currentStepElement.classList.add('error');
+                setTimeout(() => {
+                    currentStepElement.classList.remove('error');
+                }, 500);
+            }
+        } 
+        // For step 6 (final confirmation), handle the reschedule logic
+        else if (bookingState.currentStep === 6) {
+            // Validate form
+            if (validateForm()) {
+                // Process reschedule
+                processReschedule(oldDate, oldTime);
+            }
+        }
+    };
+    
+    // Function to process the reschedule action
+    async function processReschedule(oldDate, oldTime) {
+        // Remove the old booking slot
+        if (oldDate && oldTime) {
+            const bookedSlotsForOldDate = bookingState.bookedSlots[oldDate] || [];
+            const oldIndex = bookedSlotsForOldDate.indexOf(oldTime);
+            if (oldIndex > -1) {
+                bookedSlotsForOldDate.splice(oldIndex, 1);
+                console.log(`Freed up slot: ${oldDate} at ${oldTime}`);
+            }
+        }
+        
+        // Update the Google Calendar event if we have an ID
+        if (window.googleCalendarIntegration && bookingState.googleCalendarEventId) {
+            try {
+                const bookingData = {
+                    appointmentId: bookingState.appointmentId,
+                    service: bookingState.service,
+                    barber: bookingState.barber,
+                    date: bookingState.date,
+                    time: bookingState.time,
+                    addons: bookingState.addons,
+                    customerInfo: bookingState.customerInfo,
+                    totalPrice: bookingState.totalPrice,
+                    totalDuration: bookingState.totalDuration
+                };
+                
+                const updated = await window.googleCalendarIntegration.updateEventInGoogleCalendar(
+                    bookingState.googleCalendarEventId, 
+                    bookingData
+                );
+                
+                if (updated) {
+                    console.log('Google Calendar event updated successfully');
+                } else {
+                    console.warn('Failed to update Google Calendar event');
+                }
+            } catch (error) {
+                console.error('Error updating Google Calendar event:', error);
+            }
+        }
+        
+        // Add the new booking slot
+        if (!bookingState.bookedSlots[bookingState.date]) {
+            bookingState.bookedSlots[bookingState.date] = [];
+        }
+        bookingState.bookedSlots[bookingState.date].push(bookingState.time);
+        
+        // Send reschedule notifications
+        const bookingData = {
+            appointmentId: bookingState.appointmentId,
+            service: bookingState.service,
+            barber: bookingState.barber,
+            date: bookingState.date,
+            time: bookingState.time,
+            addons: bookingState.addons,
+            customerInfo: bookingState.customerInfo,
+            totalPrice: bookingState.totalPrice,
+            totalDuration: bookingState.totalDuration,
+            smsConsent: bookingState.smsConsent,
+            isRescheduled: true,
+            oldDate: oldDate,
+            oldTime: oldTime
+        };
+        
+        sendConfirmations(bookingData);
+        
+        // Show the confirmation step
+        goToStep('confirmation');
+        
+        // Reset the next button function
+        nextBtn.onclick = originalNextFn;
+    }
+});
     // Cancel button handler
     document.getElementById('cancel-btn').addEventListener('click', async function() {
         if (confirm('Are you sure you want to cancel your appointment?')) {
