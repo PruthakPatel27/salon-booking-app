@@ -1,8 +1,8 @@
-// Google Calendar API integration file
+// Google Calendar API integration file for GitHub Pages
 (function() {
-    // Path configuration for demo account
-    const APP_PATH = '/demoaccount'; // Keep this for your specific setup
-    const BASE_URL = window.location.origin + APP_PATH;
+    // Path configuration for GitHub Pages
+    const APP_PATH = ''; // Empty string for GitHub Pages
+    const BASE_URL = 'https://pruthakpatel27.github.io/salon-booking-app';
     
     // Google Calendar API configuration
     const GOOGLE_API_KEY = 'AIzaSyBf0yU_MxKg5_xAi5F_50NWIFXani8SNVY'; // Replace with your Google API Key
@@ -30,7 +30,7 @@
                     client_id: GOOGLE_CLIENT_ID,
                     scope: SCOPES,
                     callback: '', // defined at request time
-                    // Important: Use the correct redirect URI with /demoaccount
+                    // Important: Use the correct redirect URI for GitHub Pages
                     redirect_uri: BASE_URL + '/oauth2callback'
                 });
                 gisInited = true;
