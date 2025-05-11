@@ -318,11 +318,6 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
-<!-- Add this Google Calendar test button -->
-<button id="google-auth-test" class="btn" style="background-color: #4285F4; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; position: fixed; right: 20px; bottom: 20px; z-index: 1000;">
-    Connect Google Calendar
-</button>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/intlTelInput.min.js"></script>
 
@@ -337,18 +332,6 @@
     </div>
   </div>
 </div>
-
-<!-- Add Google Calendar test button script -->
-<script>
-document.getElementById('google-auth-test').addEventListener('click', function() {
-    if (window.googleCalendarIntegration) {
-        window.googleCalendarIntegration.handleAuthClick();
-    } else {
-        alert('Google Calendar integration not available');
-    }
-});
-</script>
-
 <!-- Add Google Calendar integration script before main script -->
 <script src="google-calendar.js"></script>
 <script src="script.js"></script>
