@@ -1,7 +1,7 @@
 // Google Calendar API integration file
 (function() {
     // Path configuration for demo account
-    const APP_PATH = '/demoaccount'; // Change to '' for production
+    const APP_PATH = '/demoaccount'; // Keep this for your specific setup
     const BASE_URL = window.location.origin + APP_PATH;
     
     // Google Calendar API configuration
@@ -21,7 +21,7 @@
         
         // Initialize Google API
         initializeGoogleAPI: function() {
-            console.log('Initializing Google API with base URL:', BASE_URL);
+            console.log('Initializing Google API with redirect URI:', BASE_URL + '/oauth2callback');
             gapi.load('client', initGapiClient);
             
             // Function to init tokenClient
@@ -30,7 +30,7 @@
                     client_id: GOOGLE_CLIENT_ID,
                     scope: SCOPES,
                     callback: '', // defined at request time
-                    // Add redirect URI for /demoaccount path
+                    // Important: Use the correct redirect URI with /demoaccount
                     redirect_uri: BASE_URL + '/oauth2callback'
                 });
                 gisInited = true;
@@ -84,7 +84,7 @@
         fetchAvailableSlotsFromGoogleCalendar: async function(date, bookingState) {
             if (!window.googleCalendarIntegration.isAuthenticated) {
                 console.log('Not authenticated with Google. Using mock data.');
-                return;
+                return [];
             }
             
             try {
@@ -118,13 +118,15 @@
                 }
                 
                 // Update state with booked slots from Google Calendar
-                bookingState.bookedSlots[date] = bookedSlotsForDate;
-                
-                // If we're on the time selection step, regenerate the time slots
-                if (bookingState.currentStep === 4) {
-                    // Call the generateTimeSlots function if it exists
-                    if (typeof generateTimeSlots === 'function') {
-                        generateTimeSlots(date);
+                if (bookingState) {
+                    bookingState.bookedSlots[date] = bookedSlotsForDate;
+                    
+                    // If we're on the time selection step, regenerate the time slots
+                    if (bookingState.currentStep === 4) {
+                        // Call the generateTimeSlots function if it exists
+                        if (typeof generateTimeSlots === 'function') {
+                            generateTimeSlots(date);
+                        }
                     }
                 }
                 
@@ -165,14 +167,14 @@
                 // Format add-ons for description if any
                 let addonsText = '';
                 if (bookingData.addons.length > 0) {
-                    addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ');
+                    addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ') + '\n';
                 }
                 
                 // Create event resource
                 const event = {
                     'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
                     'location': 'GoBarBerly Salon',
-                    'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
+                    'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}Customer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
                     'start': {
                         'dateTime': startDateTime.toISOString(),
                         'timeZone': 'Asia/Kolkata'
@@ -229,14 +231,14 @@
                 // Format add-ons for description if any
                 let addonsText = '';
                 if (bookingData.addons.length > 0) {
-                    addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ');
+                    addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ') + '\n';
                 }
                 
                 // Create updated event resource
                 const event = {
                     'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
                     'location': 'GoBarBerly Salon',
-                    'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
+                    'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\n${addonsText}Customer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
                     'start': {
                         'dateTime': startDateTime.toISOString(),
                         'timeZone': 'Asia/Kolkata'
