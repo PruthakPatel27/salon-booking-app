@@ -39,12 +39,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     
-    // Initialize phone input with country flags
-    const phoneInput = window.intlTelInput(document.getElementById('phone'), {
-        initialCountry: "in",
-        separateDialCode: true,
-        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/utils.js"
-    });
+// Initialize phone input with country flags
+const phoneInput = window.intlTelInput(document.getElementById('phone'), {
+    initialCountry: "auto", // Auto-detect country based on IP
+    geoIpLookup: function(callback) {
+        fetch("https://ipapi.co/json")
+            .then(response => response.json())
+            .then(data => callback(data.country_code))
+            .catch(() => callback("us")); // Default to US if detection fails
+    },
+    preferredCountries: ["us", "in"], // US and India at the top
+    separateDialCode: false, // Don't separate the dial code
+    utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/utils.js"
+});
     
     // Initialize date picker
     const datePicker = flatpickr("#date-picker", {
@@ -115,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Business hours: 9AM to 5PM
         const startHour = 9;
         const endHour = 17;
-        const interval = 30; // 30 minutes per slot
+        const interval = 10; // 10 minutes per slot
         
         // Get booked slots for this date
         const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
@@ -232,9 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
         bookingState.customerInfo.email = emailInput.value;
     });
     
-    document.getElementById('phone').addEventListener('input', () => {
+document.getElementById('phone').addEventListener('input', () => {
+    // Only use international format if valid
+    if (phoneInput.isValidNumber()) {
         bookingState.customerInfo.phone = phoneInput.getNumber();
-    });
+    } else {
+        // Fallback to raw input
+        bookingState.customerInfo.phone = document.getElementById('phone').value;
+    }
+});
     
     // Add SMS consent checkbox event listener
     document.getElementById('sms-consent').addEventListener('change', function() {
@@ -545,50 +558,60 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'APT-' + Math.random().toString(36).substring(2, 10).toUpperCase();
     }
     
-    // Function to submit booking to backend
-    async function submitBooking() {
-        // Generate a unique appointment ID
-        bookingState.appointmentId = generateAppointmentId();
-        
-        // Create booking data object
-        const bookingData = {
-            appointmentId: bookingState.appointmentId,
-            service: bookingState.service,
-            barber: bookingState.barber,
-            date: bookingState.date,
-            time: bookingState.time,
-            addons: bookingState.addons,
-            customerInfo: bookingState.customerInfo,
-            totalPrice: bookingState.totalPrice,
-            totalDuration: bookingState.totalDuration,
-            smsConsent: bookingState.smsConsent
-        };
-        
-        // In a real application, this would be sent to your backend
-        console.log('Booking submitted:', bookingData);
-        
-        // Add to Google Calendar if integration is available and authenticated
-        if (window.googleCalendarIntegration && bookingState.isAuthenticated) {
-            try {
-                const eventId = await window.googleCalendarIntegration.addEventToGoogleCalendar(bookingData);
-                if (eventId) {
-                    bookingState.googleCalendarEventId = eventId;
-                    console.log('Event added to Google Calendar with ID:', eventId);
-                }
-            } catch (error) {
-                console.error('Failed to add event to Google Calendar:', error);
+// Function to submit booking to backend
+async function submitBooking() {
+    // Validate phone number before submission
+    const phoneNumber = phoneInput.isValidNumber() 
+        ? phoneInput.getNumber(intlTelInputUtils.numberFormat.E164) 
+        : document.getElementById('phone').value;
+    
+    // Generate a unique appointment ID
+    bookingState.appointmentId = generateAppointmentId();
+    
+    // Create booking data object with correct phone number
+    const bookingData = {
+        appointmentId: bookingState.appointmentId,
+        service: bookingState.service,
+        barber: bookingState.barber,
+        date: bookingState.date,
+        time: bookingState.time,
+        addons: bookingState.addons,
+        customerInfo: {
+            firstName: bookingState.customerInfo.firstName,
+            lastName: bookingState.customerInfo.lastName,
+            email: bookingState.customerInfo.email,
+            phone: phoneNumber // Use the validated phone number
+        },
+        totalPrice: bookingState.totalPrice,
+        totalDuration: bookingState.totalDuration,
+        smsConsent: bookingState.smsConsent
+    };
+    
+    // In a real application, this would be sent to your backend
+    console.log('Booking submitted:', bookingData);
+    
+    // Add to Google Calendar if integration is available and authenticated
+    if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
+        try {
+            const eventId = await window.googleCalendarIntegration.addEventToGoogleCalendar(bookingData);
+            if (eventId) {
+                bookingState.googleCalendarEventId = eventId;
+                console.log('Event added to Google Calendar with ID:', eventId);
             }
+        } catch (error) {
+            console.error('Failed to add event to Google Calendar:', error);
         }
-        
-        // Mock successful booking - Add the time slot to booked slots
-        if (!bookingState.bookedSlots[bookingState.date]) {
-            bookingState.bookedSlots[bookingState.date] = [];
-        }
-        bookingState.bookedSlots[bookingState.date].push(bookingState.time);
-        
-        // Send confirmation emails and SMS
-        sendConfirmations(bookingData);
     }
+    
+    // Mock successful booking - Add the time slot to booked slots
+    if (!bookingState.bookedSlots[bookingState.date]) {
+        bookingState.bookedSlots[bookingState.date] = [];
+    }
+    bookingState.bookedSlots[bookingState.date].push(bookingState.time);
+    
+    // Send confirmation emails and SMS
+    sendConfirmations(bookingData);
+}
     
     // Send confirmations
     function sendConfirmations(bookingData) {
