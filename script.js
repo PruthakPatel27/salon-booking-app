@@ -474,6 +474,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (canProceed) {
                     // Submit the booking
                     submitBooking();
+                    // Add Google Calendar integration
+                    if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
+                          try {
+    // Create event directly using the API
+    const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
+    const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
+    
+    const event = {
+      'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
+      'location': 'GoBarBerly Salon',
+      'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
+      'start': {
+        'dateTime': startDateTime.toISOString(),
+        'timeZone': 'Asia/Kolkata'
+      },
+      'end': {
+        'dateTime': endDateTime.toISOString(),
+        'timeZone': 'Asia/Kolkata'
+      }
+    };
+    
+    // Add event to calendar
+    const request = gapi.client.calendar.events.insert({
+      'calendarId': 'c_574cc7eeed3acc2456f2537d389d5631441626db9edef74346e03ff0869f4130@group.calendar.google.com',
+      'resource': event
+    });
+    
+    request.execute(resp => {
+      if (resp.error) {
+        console.error('Failed to create calendar event:', resp.error);
+      } else {
+        console.log('Calendar event created:', resp.id);
+        bookingState.googleCalendarEventId = resp.id;
+      }
+    });
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+  }
+}
                     goToStep('confirmation');
                     return;
                 }
