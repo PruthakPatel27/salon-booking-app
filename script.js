@@ -68,7 +68,7 @@ const phoneInput = window.intlTelInput(document.getElementById('phone'), {
             updateSummary();
             
             // If using Google Calendar, fetch available slots
-            if (window.googleCalendarIntegration && bookingState.isAuthenticated) {
+            if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
                 window.googleCalendarIntegration.fetchAvailableSlotsFromGoogleCalendar(dateStr, bookingState);
             }
         }
@@ -487,46 +487,6 @@ document.getElementById('phone').addEventListener('input', () => {
                 if (canProceed) {
                     // Submit the booking
                     submitBooking();
-                    // Add Google Calendar integration
-                    if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
-                          try {
-    // Create event directly using the API
-    const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
-    const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
-    
-    const event = {
-      'summary': `${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
-      'location': 'GoBarBerly Salon',
-      'description': `Service: ${bookingData.service.name}\nBarber: ${bookingData.barber.name}\nCustomer Email: ${bookingData.customerInfo.email}\nCustomer Phone: ${bookingData.customerInfo.phone}\nAppointment ID: ${bookingData.appointmentId}`,
-      'start': {
-        'dateTime': startDateTime.toISOString(),
-        'timeZone': 'Asia/Kolkata'
-      },
-      'end': {
-        'dateTime': endDateTime.toISOString(),
-        'timeZone': 'Asia/Kolkata'
-      }
-    };
-    
-    // Add event to calendar
-    const request = gapi.client.calendar.events.insert({
-      'calendarId': 'c_574cc7eeed3acc2456f2537d389d5631441626db9edef74346e03ff0869f4130@group.calendar.google.com',
-      'resource': event
-    });
-    
-    request.execute(resp => {
-      if (resp.error) {
-        console.error('Failed to create calendar event:', resp.error);
-      } else {
-        console.log('Calendar event created:', resp.id);
-        bookingState.googleCalendarEventId = resp.id;
-      }
-    });
-  } catch (error) {
-    console.error('Error creating calendar event:', error);
-  }
-}
-                    goToStep('confirmation');
                     return;
                 }
                 break;
@@ -611,6 +571,9 @@ async function submitBooking() {
     
     // Send confirmation emails and SMS
     sendConfirmations(bookingData);
+    
+    // Go to confirmation step
+    goToStep('confirmation');
 }
     
     // Send confirmations
@@ -834,6 +797,21 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 oldTime: oldTime
             };
             
+            // Update Google Calendar event if available
+            if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated && bookingState.googleCalendarEventId) {
+                window.googleCalendarIntegration.updateEventInGoogleCalendar(bookingState.googleCalendarEventId, bookingData)
+                    .then(success => {
+                        if (success) {
+                            console.log('Google Calendar event updated successfully');
+                        } else {
+                            console.error('Failed to update Google Calendar event');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating Google Calendar event:', error);
+                    });
+            }
+            
             sendConfirmations(bookingData);
             goToStep('confirmation');
             
@@ -895,6 +873,21 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             bookedSlotsForDate.splice(index, 1);
         }
         
+        // Delete Google Calendar event if available
+        if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated && bookingState.googleCalendarEventId) {
+            window.googleCalendarIntegration.deleteEventFromGoogleCalendar(bookingState.googleCalendarEventId)
+                .then(success => {
+                    if (success) {
+                        console.log('Google Calendar event deleted successfully');
+                    } else {
+                        console.error('Failed to delete Google Calendar event');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting Google Calendar event:', error);
+                });
+        }
+        
         // Reset to step 1
         bookingState.currentStep = 1;
         
@@ -921,6 +914,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             email: '',
             phone: ''
         };
+        bookingState.googleCalendarEventId = null;
         
         // Go to step 1
         goToStep(1);
@@ -966,10 +960,14 @@ function showCustomSuccessMessage(message) {
         document.body.removeChild(successNotification);
     }, 3000);
 }
+
     // Initialize the booking form
     updateSummary();
     goToStep(1);
     
     // Make bookingState available globally (for the Google Calendar integration)
     window.bookingState = bookingState;
+    
+    // Make generateTimeSlots function globally accessible for Google Calendar integration
+    window.generateTimeSlots = generateTimeSlots;
 });
