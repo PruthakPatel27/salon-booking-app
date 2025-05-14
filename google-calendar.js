@@ -181,6 +181,8 @@
                     }
                 }
                 
+                console.log('Booked slots for date:', date, bookedSlotsForDate);
+                
                 // Update state with booked slots from Google Calendar
                 if (bookingState) {
                     bookingState.bookedSlots[date] = bookedSlotsForDate;
@@ -215,6 +217,8 @@
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
+                
+                console.log('Creating calendar event for:', startDateTime.toISOString());
                 
                 // Format add-ons for description if any
                 let addonsText = '';
@@ -252,11 +256,13 @@
                     'resource': event
                 });
                 
+                console.log('Event created successfully:', response);
                 console.log('Event created: ' + response.result.htmlLink);
                 return response.result.id; // Return the event ID for future reference
                 
             } catch (error) {
                 console.error('Error adding event to Google Calendar:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
                 return null;
             }
         },
@@ -270,11 +276,17 @@
                     return false;
                 }
                 
+                console.log('Updating calendar event:', eventId);
+                console.log('New date/time:', bookingData.date, bookingData.time);
+                
                 // Refresh token if needed
                 await this.refreshAuthToken();
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
+                
+                console.log('Formatted start time:', startDateTime.toISOString());
+                console.log('Formatted end time:', endDateTime.toISOString());
                 
                 // Format add-ons for description if any
                 let addonsText = '';
@@ -299,17 +311,35 @@
                 };
                 
                 // Update event in calendar
-                const response = await gapi.client.calendar.events.update({
-                    'calendarId': CALENDAR_ID,
-                    'eventId': eventId,
-                    'resource': event
-                });
-                
-                console.log('Event updated: ' + response.result.htmlLink);
-                return true;
-                
+                try {
+                    console.log('Sending update request to Google Calendar API');
+                    const response = await gapi.client.calendar.events.update({
+                        'calendarId': CALENDAR_ID,
+                        'eventId': eventId,
+                        'resource': event
+                    });
+                    
+                    console.log('Event updated successfully:', response);
+                    console.log('Event updated: ' + response.result.htmlLink);
+                    return true;
+                } catch (apiError) {
+                    console.error('API error updating event:', apiError);
+                    
+                    // If the event wasn't found, try to recreate it
+                    if (apiError.status === 404) {
+                        console.log('Event not found, attempting to create a new one');
+                        const newEventId = await this.addEventToGoogleCalendar(bookingData);
+                        if (newEventId) {
+                            console.log('Created new event with ID:', newEventId);
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                }
             } catch (error) {
                 console.error('Error updating event in Google Calendar:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
                 return false;
             }
         },
@@ -323,19 +353,26 @@
                     return false;
                 }
                 
+                console.log('Attempting to delete event with ID:', eventId);
+                
                 // Refresh token if needed
                 await this.refreshAuthToken();
                 
-                await gapi.client.calendar.events.delete({
-                    'calendarId': CALENDAR_ID,
-                    'eventId': eventId
-                });
-                
-                console.log('Event deleted successfully');
-                return true;
-                
+                try {
+                    await gapi.client.calendar.events.delete({
+                        'calendarId': CALENDAR_ID,
+                        'eventId': eventId
+                    });
+                    
+                    console.log('Event deleted successfully');
+                    return true;
+                } catch (apiError) {
+                    console.error('API error deleting event:', apiError);
+                    return false;
+                }
             } catch (error) {
                 console.error('Error deleting event from Google Calendar:', error);
+                console.error('Error details:', JSON.stringify(error, null, 2));
                 return false;
             }
         }
