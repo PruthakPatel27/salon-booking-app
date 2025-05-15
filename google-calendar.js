@@ -28,6 +28,9 @@
                 // Load the required libraries
                 await this.loadGapiClient();
                 
+                // Load Google Auth library first
+                await this.loadGoogleAuthLibrary();
+                
                 // Initialize JWT client for service account auth
                 await this.initializeJwtClient();
                 
@@ -75,13 +78,52 @@
             });
         },
         
+        // Load Google Auth Library
+        loadGoogleAuthLibrary: function() {
+            return new Promise((resolve, reject) => {
+                // Check if the library is already loaded
+                if (typeof google !== 'undefined' && typeof google.accounts !== 'undefined' && typeof google.accounts.oauth2 !== 'undefined') {
+                    console.log('Google Auth library already loaded');
+                    resolve();
+                    return;
+                }
+                
+                // Create and load the Google Auth library script
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.async = true;
+                script.defer = true;
+                
+                script.onload = () => {
+                    console.log('Google Auth library loaded');
+                    resolve();
+                };
+                
+                script.onerror = () => {
+                    console.error('Failed to load Google Auth library');
+                    reject(new Error('Failed to load Google Auth library'));
+                };
+                
+                document.body.appendChild(script);
+            });
+        },
+        
         // Initialize JWT client for service account
         initializeJwtClient: async function() {
             try {
+                console.log('Initializing JWT client...');
+                
                 // Check if google.auth is available
-                if (typeof google === 'undefined' || typeof google.auth === 'undefined') {
-                    console.error('Google Auth library not loaded');
-                    await this.loadGoogleAuthLibrary();
+                if (typeof google === 'undefined') {
+                    throw new Error('Google library not loaded');
+                }
+                
+                if (typeof google.auth === 'undefined') {
+                    throw new Error('Google Auth library not loaded');
+                }
+                
+                if (typeof google.auth.JWT === 'undefined') {
+                    throw new Error('Google Auth JWT class not loaded');
                 }
                 
                 // Import the required gapi auth libraries
@@ -118,28 +160,6 @@
                 console.error('Error initializing JWT client:', error);
                 throw error;
             }
-        },
-        
-        // Load Google Auth Library if needed
-        loadGoogleAuthLibrary: function() {
-            return new Promise((resolve, reject) => {
-                if (typeof google !== 'undefined' && typeof google.auth !== 'undefined') {
-                    resolve();
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                script.src = 'https://accounts.google.com/gsi/client';
-                script.onload = () => {
-                    console.log('Google Auth library loaded');
-                    resolve();
-                };
-                script.onerror = () => {
-                    console.error('Failed to load Google Auth library');
-                    reject(new Error('Failed to load Google Auth library'));
-                };
-                document.body.appendChild(script);
-            });
         },
         
         // Refresh token if expired
@@ -237,8 +257,8 @@
                     // If we're on the time selection step, regenerate the time slots
                     if (bookingState.currentStep === 4) {
                         // Call the generateTimeSlots function if it exists
-                        if (typeof generateTimeSlots === 'function') {
-                            generateTimeSlots(date);
+                        if (typeof window.generateTimeSlots === 'function') {
+                            window.generateTimeSlots(date);
                             console.log('Regenerated time slots for current view');
                         }
                     }
@@ -407,24 +427,38 @@
         // Check if Google API is loaded
         if (typeof gapi !== 'undefined') {
             console.log('GAPI is defined, initializing integration');
-            window.googleCalendarIntegration.initializeGoogleAPI();
+            // We need to delay the initialization slightly to ensure libraries are loaded
+            setTimeout(() => {
+                window.googleCalendarIntegration.initializeGoogleAPI();
+            }, 1000);
         } else {
             console.warn('Google API libraries not loaded. Calendar integration will be disabled.');
             
             // Try to load the libraries
             const gapiScript = document.createElement('script');
             gapiScript.src = 'https://apis.google.com/js/api.js';
+            gapiScript.async = true;
+            gapiScript.defer = true;
+            
             gapiScript.onload = () => {
                 console.log('GAPI loaded dynamically');
                 
                 const gsiScript = document.createElement('script');
                 gsiScript.src = 'https://accounts.google.com/gsi/client';
+                gsiScript.async = true;
+                gsiScript.defer = true;
+                
                 gsiScript.onload = () => {
                     console.log('GSI loaded dynamically');
-                    window.googleCalendarIntegration.initializeGoogleAPI();
+                    // Add a delay to ensure libraries are fully loaded
+                    setTimeout(() => {
+                        window.googleCalendarIntegration.initializeGoogleAPI();
+                    }, 1000);
                 };
+                
                 document.body.appendChild(gsiScript);
             };
+            
             document.body.appendChild(gapiScript);
         }
     });
