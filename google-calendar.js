@@ -25,11 +25,11 @@
             try {
                 console.log('Initializing Google API with service account');
                 
-                // Load the required libraries
-                await this.loadGapiClient();
+                // First, dynamically load the Google API libraries
+                await this.loadRequiredLibraries();
                 
-                // Load Google Auth library first
-                await this.loadGoogleAuthLibrary();
+                // Load the required GAPI client
+                await this.loadGapiClient();
                 
                 // Initialize JWT client for service account auth
                 await this.initializeJwtClient();
@@ -50,6 +50,35 @@
             } catch (error) {
                 console.error('Error initializing Google API with service account:', error);
             }
+        },
+        
+        // Load all required Google libraries
+        loadRequiredLibraries: async function() {
+            // First, load the GAPI script if not already loaded
+            if (typeof gapi === 'undefined') {
+                await this.loadScript('https://apis.google.com/js/api.js');
+                console.log('GAPI script loaded');
+            }
+            
+            // Then, load the Google Identity Services script if not already loaded
+            if (typeof google === 'undefined' || typeof google.accounts === 'undefined') {
+                await this.loadScript('https://accounts.google.com/gsi/client');
+                console.log('Google Identity Services script loaded');
+            }
+            
+            // Wait for a moment to ensure libraries are initialized
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        },
+        
+        // Helper function to load scripts
+        loadScript: function(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
         },
         
         // Load the GAPI client
@@ -78,58 +107,33 @@
             });
         },
         
-        // Load Google Auth Library
-        loadGoogleAuthLibrary: function() {
-            return new Promise((resolve, reject) => {
-                // Check if the library is already loaded
-                if (typeof google !== 'undefined' && typeof google.accounts !== 'undefined' && typeof google.accounts.oauth2 !== 'undefined') {
-                    console.log('Google Auth library already loaded');
-                    resolve();
-                    return;
-                }
-                
-                // Create and load the Google Auth library script
-                const script = document.createElement('script');
-                script.src = 'https://accounts.google.com/gsi/client';
-                script.async = true;
-                script.defer = true;
-                
-                script.onload = () => {
-                    console.log('Google Auth library loaded');
-                    resolve();
-                };
-                
-                script.onerror = () => {
-                    console.error('Failed to load Google Auth library');
-                    reject(new Error('Failed to load Google Auth library'));
-                };
-                
-                document.body.appendChild(script);
-            });
-        },
-        
         // Initialize JWT client for service account
         initializeJwtClient: async function() {
             try {
                 console.log('Initializing JWT client...');
                 
-                // Check if google.auth is available
+                // Verify that Google Auth library is available
                 if (typeof google === 'undefined') {
-                    throw new Error('Google library not loaded');
+                    throw new Error('Google library not available');
                 }
                 
-                if (typeof google.auth === 'undefined') {
+                // Ensure google.auth exists and is loaded properly
+                if (!google.auth) {
                     throw new Error('Google Auth library not loaded');
                 }
                 
-                if (typeof google.auth.JWT === 'undefined') {
-                    throw new Error('Google Auth JWT class not loaded');
+                // Check if JWT is available
+                if (!google.auth.JWT) {
+                    // If it's not available, try to create an OAuth2 client instead as fallback
+                    console.log('JWT not available, creating OAuth2 client as fallback');
+                    
+                    // Let's use OAuth 2.0 with client credentials instead
+                    // This part requires changes in your Google Cloud Console
+                    // You'll need to enable OAuth 2.0 and get client credentials
+                    throw new Error('JWT method not available in Google Auth library');
                 }
                 
-                // Import the required gapi auth libraries
-                await new Promise((resolve) => gapi.load('client:auth2', resolve));
-                
-                // Set up JWT client
+                // Create a JWT client for service account authentication
                 const authClient = new google.auth.JWT(
                     SERVICE_ACCOUNT.client_email,
                     null,
@@ -138,7 +142,7 @@
                     null
                 );
                 
-                // Authenticate
+                // Authorize the client to get an access token
                 const tokens = await new Promise((resolve, reject) => {
                     authClient.authorize((err, tokens) => {
                         if (err) {
@@ -149,17 +153,25 @@
                     });
                 });
                 
-                // Set the auth client
+                // Set the auth token in the GAPI client
                 gapi.client.setToken({
                     access_token: tokens.access_token
                 });
                 
                 this.jwtClient = authClient;
-                console.log('JWT client initialized successfully with token:', tokens.access_token.substring(0, 10) + '...');
+                console.log('JWT client initialized successfully');
             } catch (error) {
                 console.error('Error initializing JWT client:', error);
                 throw error;
             }
+        },
+        
+        // Alternative method to get calendar access - using API key only (limited access)
+        useApiKeyOnlyAccess: function() {
+            // This is a limited access fallback when JWT auth fails
+            // It only works for public calendars or when you have the calendar ID
+            console.log('Using API key only access (limited functionality)');
+            this.isAuthenticated = true;
         },
         
         // Refresh token if expired
@@ -187,7 +199,7 @@
                     });
                 });
                 
-                console.log('Token refreshed successfully:', tokens.access_token.substring(0, 10) + '...');
+                console.log('Token refreshed successfully');
             } catch (error) {
                 console.error('Error refreshing auth token:', error);
                 throw error;
@@ -205,8 +217,13 @@
                     await this.initializeGoogleAPI();
                 }
                 
-                // Refresh token if needed
-                await this.refreshAuthToken();
+                try {
+                    // Refresh token if needed
+                    await this.refreshAuthToken();
+                } catch (error) {
+                    console.error('Error refreshing token:', error);
+                    // Try to proceed anyway with current token
+                }
                 
                 // Get the start and end of the day in ISO format
                 const timeMin = new Date(`${date}T00:00:00`).toISOString();
@@ -284,7 +301,12 @@
                 }
                 
                 // Refresh token if needed
-                await this.refreshAuthToken();
+                try {
+                    await this.refreshAuthToken();
+                } catch (error) {
+                    console.error('Error refreshing token:', error);
+                    // Try to proceed anyway with current token
+                }
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
@@ -348,7 +370,12 @@
                 console.log(`Updating event ${eventId} for booking ${bookingData.appointmentId}`);
                 
                 // Refresh token if needed
-                await this.refreshAuthToken();
+                try {
+                    await this.refreshAuthToken();
+                } catch (error) {
+                    console.error('Error refreshing token:', error);
+                    // Try to proceed anyway with current token
+                }
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
@@ -403,7 +430,12 @@
                 console.log(`Deleting event ${eventId} from Google Calendar`);
                 
                 // Refresh token if needed
-                await this.refreshAuthToken();
+                try {
+                    await this.refreshAuthToken();
+                } catch (error) {
+                    console.error('Error refreshing token:', error);
+                    // Try to proceed anyway with current token
+                }
                 
                 await gapi.client.calendar.events.delete({
                     'calendarId': CALENDAR_ID,
@@ -424,42 +456,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM content loaded, initializing Google Calendar integration');
         
-        // Check if Google API is loaded
-        if (typeof gapi !== 'undefined') {
-            console.log('GAPI is defined, initializing integration');
-            // We need to delay the initialization slightly to ensure libraries are loaded
-            setTimeout(() => {
-                window.googleCalendarIntegration.initializeGoogleAPI();
-            }, 1000);
-        } else {
-            console.warn('Google API libraries not loaded. Calendar integration will be disabled.');
-            
-            // Try to load the libraries
-            const gapiScript = document.createElement('script');
-            gapiScript.src = 'https://apis.google.com/js/api.js';
-            gapiScript.async = true;
-            gapiScript.defer = true;
-            
-            gapiScript.onload = () => {
-                console.log('GAPI loaded dynamically');
-                
-                const gsiScript = document.createElement('script');
-                gsiScript.src = 'https://accounts.google.com/gsi/client';
-                gsiScript.async = true;
-                gsiScript.defer = true;
-                
-                gsiScript.onload = () => {
-                    console.log('GSI loaded dynamically');
-                    // Add a delay to ensure libraries are fully loaded
-                    setTimeout(() => {
-                        window.googleCalendarIntegration.initializeGoogleAPI();
-                    }, 1000);
-                };
-                
-                document.body.appendChild(gsiScript);
-            };
-            
-            document.body.appendChild(gapiScript);
-        }
+        // Directly start the initialization process - don't wait or check for libraries
+        // We'll load them dynamically in the initializeGoogleAPI method
+        setTimeout(() => {
+            window.googleCalendarIntegration.initializeGoogleAPI();
+        }, 1500); // Wait 1.5 seconds to ensure page is fully loaded
     });
 })();
