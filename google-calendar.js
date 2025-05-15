@@ -1,86 +1,166 @@
-// Google Calendar API integration using API Key only
+// Google Calendar API integration using Service Account with personal Gmail account
 (function() {
-    // Google Calendar API configuration - Your Calendar ID
-    const CALENDAR_ID = '1b0facc4b0d9a943d9c1ec34d2a4b0722625eaec57b3ac4a28467ae1ed8282a8@group.calendar.google.com';
+    // Path configuration for GitHub Pages
+    const APP_PATH = ''; // Empty string for GitHub Pages
+    const BASE_URL = 'https://pruthakpatel27.github.io/salon-booking-app';
     
-    // API Key for authentication - this is the simplest approach
-    const API_KEY = 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo';
+    // Google Calendar API configuration - USE YOUR PERSONAL GMAIL CALENDAR ID HERE
+    const CALENDAR_ID = '1b0facc4b0d9a943d9c1ec34d2a4b0722625eaec57b3ac4a28467ae1ed8282a8@group.calendar.google.com'; // Replace with your personal Gmail calendar ID if not using 'primary'
+    
+    // Service account configuration from your personal Gmail account project
+    const SERVICE_ACCOUNT = {
+        client_email: "salon-calendar-service@northern-math-459404-c0.iam.gserviceaccount.com",
+        private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDBKhM+g3bWilfz\nDmQCgEU9Rx4qtOm2ZzNcEKrIn/Vv2PSGakUjOQ4kHqxezIBCRAWic9GZTeliSe7E\ncynEMo8x/+Btj+nIco9rU0AYFvxd/tiacLKFuYW6wXAHFoI49Sjzg//XV2pt6n2F\nflORbI6mAkojDMcIFCZIXe/o7oh8kbVierfnp2E/yQKnhyNoToPEZzXv+3JLX1ni\n2atuKmFqg2T5Cpwj3irFJna2j75z7ob3pfxJ78vzPJszmH/pRohkZND00o0SLGDs\nfXdAKbN+4ZF4ZpqmRi28r8KIjSmrR8J52fM6szSMmWoFxAHljNWZNULdAV9FO1U5\njYi05PqXAgMBAAECggEADN0s9+pQZTxEXCr2rRX2xnxwfV6b++pGiNiRTxgcA81a\nh4MXRJ+9mdkzGIMc/YzDJUz6Re/i3YlX7dxPiUHmuGk2fIVrh85dT8P1DkWlm+rn\naO2dbftrdQMB32730Cw/hGwjgydOrrBBmLzPeu1UWKjpYAkvThHtdL9QxV3xV/5M\nfvoGDTtIv6BMLuy+GSCoqrCOR2kN5+n/1oDrV0maahRb1T+DiKJ8AnpWdrIs6XXP\novoSY2V2M2ueDBtBxFwSJyLvLzKq099RzcacpaZA8xq/FQTFgvX1i1wzrdaFgcJT\nQgB3M6bYYqyO540WbJ9YXUK+P4V84N7efvOlsECnSQKBgQDr4ws/8o8RKJDHBAWp\npIbY8GFRC/ej5CVfRdT2CfN+b39EEktRV1lFo6tqdOq108f+lxZYUFEHvOkxc8d2\nimrzh7+4M51aVzxFRgYgR+grN5SXPuM8TmYgzEQxuqFf/+BtKO+af2BTeddwYHSr\n3p1sVSdKtfPRgQxOxTz2WutzTwKBgQDRonsNIa60oXeIbzgYyUdIj4A4l+tyJANq\nO9dZFenF0XjqdpQTgf8ur7pmFayujYOzWr305D/MV8UWprlCZ97skYCustiUkIWM\n/t1B5bKOCPfbplswI4b7h3jKQTIf0T76Q6VxvcFTEXh5zPYQgi7Y8Fj1leWsmQ7F\n07VzPadSOQKBgAfXxbD7nJwicCXd0V5hlQYzf9jVAAfX9xIi3UDM9eaXSHD39r8e\nm15AYdupRYCEKRsi5OBM01ThiBNX2SLs2T99nPc/6BRv4BYhjOSX33VIZM1ejumb\nZbPjdsT8go8Rj+GxQb4uTAKag3o+CsMIJM3MSwEl6ZRmqQUZc7xxK3DrAoGBAI8Z\n7AfFw124j0FKMq/wzkFA/BUl12o+HTqqiNFePQt1d6YNtf0vE0QKXyKKjytEnO+U\n9PCz0r0p+PcCbppfD3TLylz25xNbKF9cJytxohaFFrUQ9VSCHAWdr53ZLV881lG+\nVbS0BMEwvt3eROZ2B4a9YuyaG4NbpBL09vsozgw5AoGBANcPO7+/fLv6foUdrHOj\n7pR9l07u3MNMsEkbZqQuNBOMEQgk42daBd7H6QXFSSRhTyXtuK0CxLfLQFR6qUjh\nMcalScfSeseOUBqbrmazylB89cJ5npryltC5snPlkyuPThGtorITIP8Pc/Tt3xvc\n4BXk87NJLAnNs6CAQKHks3mE\n-----END PRIVATE KEY-----\n", // Replace with the private key from your JSON file
+        project_id: "northern-math-459404-c0"
+    };
     
     // Create global googleCalendarIntegration object
     window.googleCalendarIntegration = {
         isAuthenticated: false,
+        gapi: null,
+        jwtClient: null,
         
-        // Initialize Google API
-        initializeGoogleAPI: function() {
-            console.log('Initializing Google Calendar integration');
-            
-            // Load the GAPI script if not already loaded
-            if (typeof gapi === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'https://apis.google.com/js/api.js';
-                script.onload = () => {
-                    this.loadGapiClient();
-                };
-                document.head.appendChild(script);
-            } else {
-                this.loadGapiClient();
+        // Initialize Google API with service account
+        initializeGoogleAPI: async function() {
+            try {
+                console.log('Initializing Google API with service account');
+                
+                // Load the required libraries
+                await this.loadGapiClient();
+                
+                // Initialize JWT client for service account auth
+                await this.initializeJwtClient();
+                
+                // Set the authentication flag
+                this.isAuthenticated = true;
+                console.log('Service account authentication successful');
+                
+                // Initialize booking state if available
+                if (window.bookingState) {
+                    window.bookingState.isAuthenticated = true;
+                    
+                    // If date is already selected, fetch slots
+                    if (window.bookingState.date) {
+                        window.googleCalendarIntegration.fetchAvailableSlotsFromGoogleCalendar(window.bookingState.date, window.bookingState);
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing Google API with service account:', error);
             }
         },
         
         // Load the GAPI client
         loadGapiClient: function() {
-            gapi.load('client', () => {
-                gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
-                }).then(() => {
-                    console.log('Google Calendar API initialized successfully');
-                    this.isAuthenticated = true;
-                    
-                    // Initialize booking state if available
-                    if (window.bookingState) {
-                        window.bookingState.isAuthenticated = true;
-                        
-                        // If date is already selected, fetch slots
-                        if (window.bookingState.date) {
-                            this.fetchAvailableSlotsFromGoogleCalendar(window.bookingState.date, window.bookingState);
-                        }
+            return new Promise((resolve, reject) => {
+                gapi.load('client', async () => {
+                    try {
+                        await gapi.client.init({
+                            apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo', // Replace with your API key from personal Gmail project if needed
+                            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
+                        });
+                        this.gapi = gapi;
+                        resolve();
+                    } catch (error) {
+                        reject(error);
                     }
-                }).catch(error => {
-                    console.error('Error initializing Google Calendar API:', error);
                 });
             });
         },
         
-        // Fetch available slots from Google Calendar
-        fetchAvailableSlotsFromGoogleCalendar: function(date, bookingState) {
-            if (!this.isAuthenticated) {
-                console.log('API not initialized yet, waiting...');
-                setTimeout(() => {
-                    this.fetchAvailableSlotsFromGoogleCalendar(date, bookingState);
-                }, 500);
+        // Initialize JWT client for service account
+        initializeJwtClient: async function() {
+            try {
+                // Import the required gapi auth libraries
+                await new Promise((resolve) => gapi.load('client:auth2', resolve));
+                
+                // Set up JWT client
+                const authClient = new google.auth.JWT(
+                    SERVICE_ACCOUNT.client_email,
+                    null,
+                    SERVICE_ACCOUNT.private_key,
+                    ['https://www.googleapis.com/auth/calendar'],
+                    null
+                );
+                
+                // Authenticate
+                await new Promise((resolve, reject) => {
+                    authClient.authorize((err, tokens) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        resolve(tokens);
+                    });
+                });
+                
+                // Set the auth client
+                gapi.client.setToken({
+                    access_token: authClient.credentials.access_token
+                });
+                
+                this.jwtClient = authClient;
+            } catch (error) {
+                console.error('Error initializing JWT client:', error);
+                throw error;
+            }
+        },
+        
+        // Refresh token if expired
+        refreshAuthToken: async function() {
+            if (!this.jwtClient) {
+                await this.initializeJwtClient();
                 return;
             }
             
-            console.log('Fetching available slots for date:', date);
-            
-            // Get the start and end of the day in ISO format
-            const timeMin = new Date(`${date}T00:00:00`).toISOString();
-            const timeMax = new Date(`${date}T23:59:59`).toISOString();
-            
-            gapi.client.calendar.events.list({
-                'calendarId': CALENDAR_ID,
-                'timeMin': timeMin,
-                'timeMax': timeMax,
-                'showDeleted': false,
-                'singleEvents': true,
-                'orderBy': 'startTime'
-            }).then(response => {
+            try {
+                await new Promise((resolve, reject) => {
+                    this.jwtClient.authorize((err, tokens) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        
+                        // Update the client token
+                        gapi.client.setToken({
+                            access_token: tokens.access_token
+                        });
+                        
+                        resolve(tokens);
+                    });
+                });
+            } catch (error) {
+                console.error('Error refreshing auth token:', error);
+                throw error;
+            }
+        },
+        
+        // Fetch available slots from Google Calendar
+        fetchAvailableSlotsFromGoogleCalendar: async function(date, bookingState) {
+            try {
+                // Make sure we're authenticated
+                if (!this.isAuthenticated) {
+                    await this.initializeGoogleAPI();
+                }
+                
+                // Refresh token if needed
+                await this.refreshAuthToken();
+                
+                // Get the start and end of the day in ISO format
+                const timeMin = new Date(`${date}T00:00:00`).toISOString();
+                const timeMax = new Date(`${date}T23:59:59`).toISOString();
+                
+                const response = await gapi.client.calendar.events.list({
+                    'calendarId': CALENDAR_ID,
+                    'timeMin': timeMin,
+                    'timeMax': timeMax,
+                    'showDeleted': false,
+                    'singleEvents': true,
+                    'orderBy': 'startTime'
+                });
+                
                 // Process events to determine booked slots
                 const events = response.result.items;
                 const bookedSlotsForDate = [];
-                
-                console.log(`Found ${events ? events.length : 0} events for date ${date}`);
                 
                 if (events && events.length > 0) {
                     for (let i = 0; i < events.length; i++) {
@@ -97,7 +177,6 @@
                             const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                             
                             bookedSlotsForDate.push(timeStr);
-                            console.log(`Found booked slot: ${timeStr}`);
                         }
                     }
                 }
@@ -105,50 +184,45 @@
                 // Update state with booked slots from Google Calendar
                 if (bookingState) {
                     bookingState.bookedSlots[date] = bookedSlotsForDate;
-                    console.log(`Updated booking state with ${bookedSlotsForDate.length} booked slots for ${date}`);
                     
                     // If we're on the time selection step, regenerate the time slots
                     if (bookingState.currentStep === 4) {
                         // Call the generateTimeSlots function if it exists
-                        if (typeof window.generateTimeSlots === 'function') {
-                            window.generateTimeSlots(date);
-                            console.log('Regenerated time slots for current view');
+                        if (typeof generateTimeSlots === 'function') {
+                            generateTimeSlots(date);
                         }
                     }
                 }
                 
                 return bookedSlotsForDate;
-            }).catch(error => {
+                
+            } catch (error) {
                 console.error('Error fetching events from Google Calendar:', error);
                 return [];
-            });
+            }
         },
         
         // Add an event to Google Calendar
-        addEventToGoogleCalendar: function(bookingData) {
-            return new Promise((resolve, reject) => {
+        addEventToGoogleCalendar: async function(bookingData) {
+            try {
+                // Make sure we're authenticated
                 if (!this.isAuthenticated) {
-                    console.log('API not initialized yet, waiting...');
-                    setTimeout(() => {
-                        this.addEventToGoogleCalendar(bookingData)
-                            .then(resolve)
-                            .catch(reject);
-                    }, 500);
-                    return;
+                    await this.initializeGoogleAPI();
                 }
                 
-                console.log('Adding event to Google Calendar for booking:', bookingData.appointmentId);
+                // Refresh token if needed
+                await this.refreshAuthToken();
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
                 
                 // Format add-ons for description if any
                 let addonsText = '';
-                if (bookingData.addons && bookingData.addons.length > 0) {
+                if (bookingData.addons.length > 0) {
                     addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ') + '\n';
                 }
                 
-                // Create event resource
+                // Create event resource - Add prefix to make it easier to identify in personal calendar
                 const event = {
                     'summary': `GoBarBerly Salon: ${bookingData.customerInfo.firstName} ${bookingData.customerInfo.lastName} - ${bookingData.service.name}`,
                     'location': 'GoBarBerly Salon',
@@ -168,39 +242,43 @@
                             {'method': 'popup', 'minutes': 60}
                         ]
                     },
+                    // Add custom color ID for salon appointments to make them visually distinct
                     'colorId': '6' // 6 is Tangerine (orange color)
                 };
                 
-                gapi.client.calendar.events.insert({
+                // Add event to calendar
+                const response = await gapi.client.calendar.events.insert({
                     'calendarId': CALENDAR_ID,
                     'resource': event
-                }).then(response => {
-                    console.log('Event created: ' + response.result.htmlLink);
-                    resolve(response.result.id);
-                }).catch(error => {
-                    console.error('Error adding event to Google Calendar:', error);
-                    resolve(null); // Resolve with null instead of rejecting
                 });
-            });
+                
+                console.log('Event created: ' + response.result.htmlLink);
+                return response.result.id; // Return the event ID for future reference
+                
+            } catch (error) {
+                console.error('Error adding event to Google Calendar:', error);
+                return null;
+            }
         },
         
         // Update an event in Google Calendar
-        updateEventInGoogleCalendar: function(eventId, bookingData) {
-            return new Promise((resolve, reject) => {
+        updateEventInGoogleCalendar: async function(eventId, bookingData) {
+            try {
+                // Make sure we're authenticated
                 if (!this.isAuthenticated || !eventId) {
-                    console.log('API not initialized or no event ID provided. Skipping calendar update.');
-                    resolve(false);
-                    return;
+                    console.log('Not authenticated or no event ID provided. Skipping calendar update.');
+                    return false;
                 }
                 
-                console.log(`Updating event ${eventId} for booking ${bookingData.appointmentId}`);
+                // Refresh token if needed
+                await this.refreshAuthToken();
                 
                 const startDateTime = new Date(`${bookingData.date}T${bookingData.time}`);
                 const endDateTime = new Date(startDateTime.getTime() + bookingData.totalDuration * 60000);
                 
                 // Format add-ons for description if any
                 let addonsText = '';
-                if (bookingData.addons && bookingData.addons.length > 0) {
+                if (bookingData.addons.length > 0) {
                     addonsText = 'Add-ons: ' + bookingData.addons.map(addon => addon.name).join(', ') + '\n';
                 }
                 
@@ -220,52 +298,72 @@
                     'colorId': '6' // 6 is Tangerine (orange color)
                 };
                 
-                gapi.client.calendar.events.update({
+                // Update event in calendar
+                const response = await gapi.client.calendar.events.update({
                     'calendarId': CALENDAR_ID,
                     'eventId': eventId,
                     'resource': event
-                }).then(response => {
-                    console.log('Event updated: ' + response.result.htmlLink);
-                    resolve(true);
-                }).catch(error => {
-                    console.error('Error updating event in Google Calendar:', error);
-                    resolve(false);
                 });
-            });
+                
+                console.log('Event updated: ' + response.result.htmlLink);
+                return true;
+                
+            } catch (error) {
+                console.error('Error updating event in Google Calendar:', error);
+                return false;
+            }
         },
         
         // Delete an event from Google Calendar
-        deleteEventFromGoogleCalendar: function(eventId) {
-            return new Promise((resolve, reject) => {
+        deleteEventFromGoogleCalendar: async function(eventId) {
+            try {
+                // Make sure we're authenticated
                 if (!this.isAuthenticated || !eventId) {
-                    console.log('API not initialized or no event ID provided. Skipping calendar deletion.');
-                    resolve(false);
-                    return;
+                    console.log('Not authenticated or no event ID provided. Skipping calendar deletion.');
+                    return false;
                 }
                 
-                console.log(`Deleting event ${eventId} from Google Calendar`);
+                // Refresh token if needed
+                await this.refreshAuthToken();
                 
-                gapi.client.calendar.events.delete({
+                await gapi.client.calendar.events.delete({
                     'calendarId': CALENDAR_ID,
                     'eventId': eventId
-                }).then(() => {
-                    console.log('Event deleted successfully');
-                    resolve(true);
-                }).catch(error => {
-                    console.error('Error deleting event from Google Calendar:', error);
-                    resolve(false);
                 });
-            });
+                
+                console.log('Event deleted successfully');
+                return true;
+                
+            } catch (error) {
+                console.error('Error deleting event from Google Calendar:', error);
+                return false;
+            }
         }
     };
     
     // Initialize when document is ready
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM content loaded, initializing Google Calendar integration');
-        
-        // Initialize with a delay to ensure page is fully loaded
-        setTimeout(() => {
+        // Check if Google API is loaded
+        if (typeof gapi !== 'undefined') {
             window.googleCalendarIntegration.initializeGoogleAPI();
-        }, 500);
+        } else {
+            console.warn('Google API libraries not loaded. Calendar integration will be disabled.');
+            
+            // Try to load the libraries
+            const gapiScript = document.createElement('script');
+            gapiScript.src = 'https://apis.google.com/js/api.js';
+            gapiScript.onload = () => {
+                console.log('GAPI loaded dynamically');
+                
+                const gsiScript = document.createElement('script');
+                gsiScript.src = 'https://accounts.google.com/gsi/client';
+                gsiScript.onload = () => {
+                    console.log('GSI loaded dynamically');
+                    window.googleCalendarIntegration.initializeGoogleAPI();
+                };
+                document.body.appendChild(gsiScript);
+            };
+            document.body.appendChild(gapiScript);
+        }
     });
 })();
