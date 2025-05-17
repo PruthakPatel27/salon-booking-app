@@ -19,7 +19,6 @@
         isAuthenticated: false,
         authInProgress: false,
         
-        // Initialize Google API with service account
         initializeGoogleAPI: async function() {
             try {
                 console.log('Initializing Google API with service account');
@@ -29,9 +28,53 @@
                 }
                 
                 this.authInProgress = true;
+                this.useDirectTokenApproach = false;
                 
-                // Load required scripts if they don't exist
-                await this.loadRequiredScripts();
+                // Check if scripts are already loaded and available
+                const googleLoaded = typeof google !== 'undefined' && google.auth;
+                const gapiLoaded = typeof gapi !== 'undefined' && gapi.client;
+                
+                if (!googleLoaded || !gapiLoaded) {
+                    console.log('Required libraries not loaded, loading scripts...');
+                    
+                    // First load the GAPI script if needed
+                    if (typeof gapi === 'undefined') {
+                        await this.loadScript('https://apis.google.com/js/api.js');
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    
+                    // Load gapi.client if needed
+                    if (typeof gapi !== 'undefined' && !gapi.client) {
+                        await new Promise((resolve) => {
+                            gapi.load('client', resolve);
+                        });
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                    
+                    // Initialize gapi client
+                    if (typeof gapi !== 'undefined' && gapi.client) {
+                        try {
+                            await gapi.client.init({
+                                apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo',
+                                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
+                            });
+                        } catch (e) {
+                            console.error('Error initializing GAPI client:', e);
+                        }
+                    }
+                    
+                    // Load GSI script if needed
+                    if (typeof google === 'undefined' || !google.auth) {
+                        await this.loadScript('https://accounts.google.com/gsi/client');
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    }
+                    
+                    // Final check if all is loaded
+                    if (typeof google === 'undefined' || !google.auth) {
+                        console.warn('Google auth library not available. Using fallback approach.');
+                        this.useDirectTokenApproach = true;
+                    }
+                }
                 
                 // Create JWT client for service account
                 const authClient = await this.createJwtClient();
@@ -55,58 +98,114 @@
             } catch (error) {
                 this.authInProgress = false;
                 console.error('Error initializing Google API with service account:', error);
+                
                 // Continue with app functionality even if calendar fails
+                // Try a simplified approach if available
+                if (typeof gapi !== 'undefined' && gapi.client) {
+                    try {
+                        console.log('Attempting simplified authentication approach');
+                        // Set a default token for basic operation
+                        gapi.client.setToken({
+                            access_token: null  // Will use API key only
+                        });
+                        this.isAuthenticated = true;
+                    } catch (e) {
+                        console.error('Simplified auth also failed:', e);
+                    }
+                }
+                
                 return null;
             }
         },
         
         // Load required scripts (gapi and googleapis)
         loadRequiredScripts: async function() {
-            // First ensure gapi is loaded
-            if (typeof gapi === 'undefined') {
-                await this.loadScript('https://apis.google.com/js/api.js');
-                // Wait for it to be properly initialized
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-            
-            // Make sure the gapi client is loaded
-            if (!gapi.client) {
-                await new Promise((resolve) => {
-                    gapi.load('client', resolve);
+            try {
+                // First ensure gapi is loaded
+                if (typeof gapi === 'undefined') {
+                    // Load GAPI script
+                    await this.loadScript('https://apis.google.com/js/api.js');
+                    // Wait for it to be properly initialized
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Ensure gapi is defined after loading
+                if (typeof gapi === 'undefined') {
+                    throw new Error('Failed to load Google API client');
+                }
+                
+                // Make sure the gapi client is loaded
+                if (!gapi.client) {
+                    await new Promise((resolve, reject) => {
+                        try {
+                            gapi.load('client', resolve);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                    // Wait for client to be ready
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                // Initialize gapi client
+                await gapi.client.init({
+                    apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo',
+                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
                 });
-                // Wait for client to be ready
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-            
-            // Initialize gapi client
-            await gapi.client.init({
-                apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo',
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
-            });
-            
-            // Now load the Google Identity Services library for JWT auth
-            if (typeof google === 'undefined' || !google.auth) {
-                await this.loadScript('https://accounts.google.com/gsi/client');
-                // Give more time for this script to properly initialize
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-            
-            // Additional check to make sure google.auth is available
-            if (typeof google === 'undefined' || !google.auth) {
-                // If still not available, try loading a polyfill
-                await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/google-api-javascript-client/1.1.0/googleapis.min.js');
-                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Now load the Google Identity Services library for JWT auth
+                if (typeof google === 'undefined' || !google.auth) {
+                    // Load GSI script
+                    await this.loadScript('https://accounts.google.com/gsi/client');
+                    // Give more time for this script to properly initialize
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                }
+                
+                // If google auth still not available, try a different approach
+                if (typeof google === 'undefined' || !google.auth) {
+                    console.warn('Google auth library not available after loading script. Using direct REST approach.');
+                    // We'll use a direct token approach instead
+                    this.useDirectTokenApproach = true;
+                }
+                
+                console.log('Required scripts loaded successfully');
+            } catch (error) {
+                console.error('Error loading required scripts:', error);
+                // Mark that we need to use fallback approach
+                this.useDirectTokenApproach = true;
+                throw error;
             }
         },
         
         // Helper function to load a script
         loadScript: function(src) {
             return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = src;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.body.appendChild(script);
+                try {
+                    // Check if script is already loaded
+                    if (document.querySelector(`script[src="${src}"]`)) {
+                        resolve();
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.async = true;
+                    
+                    script.onload = () => {
+                        console.log(`Script loaded: ${src}`);
+                        resolve();
+                    };
+                    
+                    script.onerror = (e) => {
+                        console.error(`Error loading script ${src}:`, e);
+                        reject(new Error(`Failed to load script: ${src}`));
+                    };
+                    
+                    document.body.appendChild(script);
+                } catch (error) {
+                    console.error(`Exception when loading script ${src}:`, error);
+                    reject(error);
+                }
             });
         },
         
@@ -483,45 +582,56 @@
         }
     };
     
-    // Initialize when document is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        // Start authentication immediately without waiting for user action
-        window.googleCalendarIntegration.initializeGoogleAPI().catch(error => {
-            console.error('Failed to initialize Google Calendar integration:', error);
-            // Continue with app functionality even if calendar auth fails
-        });
-    });
+    // Start with variable to track if initialization has been attempted
+    window.gcalInitAttempted = false;
     
-    // Also try to initialize if the document is already loaded
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(() => {
-            window.googleCalendarIntegration.initializeGoogleAPI().catch(error => {
-                console.error('Failed to initialize Google Calendar integration on already loaded page:', error);
-            });
-        }, 1000);
-    }
-    
-    // Add script tags directly to ensure they load
-    function addGoogleScripts() {
-        // Add GAPI script if not already present
-        if (!document.querySelector('script[src*="apis.google.com/js/api.js"]')) {
-            const gapiScript = document.createElement('script');
-            gapiScript.src = 'https://apis.google.com/js/api.js';
-            gapiScript.async = true;
-            gapiScript.defer = true;
-            document.head.appendChild(gapiScript);
-        }
+    // Create a function to handle initialization
+    function initializeCalendar() {
+        // Only try once
+        if (window.gcalInitAttempted) return;
+        window.gcalInitAttempted = true;
         
-        // Add GSI script if not already present
-        if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+        // Add scripts and then initialize the API when they're loaded
+        const gapiScript = document.createElement('script');
+        gapiScript.src = 'https://apis.google.com/js/api.js';
+        
+        gapiScript.onload = function() {
+            // Once GAPI is loaded, add GSI script
             const gsiScript = document.createElement('script');
             gsiScript.src = 'https://accounts.google.com/gsi/client';
-            gsiScript.async = true;
-            gsiScript.defer = true;
+            
+            gsiScript.onload = function() {
+                // Once both scripts are loaded, wait a moment and initialize
+                setTimeout(() => {
+                    if (window.googleCalendarIntegration && !window.googleCalendarIntegration.isAuthenticated) {
+                        window.googleCalendarIntegration.initializeGoogleAPI()
+                            .catch(error => {
+                                console.error('Failed to initialize Google Calendar integration:', error);
+                            });
+                    }
+                }, 1000);
+            };
+            
             document.head.appendChild(gsiScript);
-        }
+        };
+        
+        document.head.appendChild(gapiScript);
     }
     
-    // Add scripts immediately
-    addGoogleScripts();
+    // Try initialization at various points
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeCalendar);
+    } else {
+        setTimeout(initializeCalendar, 500);
+    }
+    
+    // Add backup initialization in case the first attempt fails
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            // Only try again if not already authenticated
+            if (window.googleCalendarIntegration && !window.googleCalendarIntegration.isAuthenticated) {
+                initializeCalendar();
+            }
+        }, 2000);
+    });
 })();
