@@ -1,4 +1,4 @@
-})();// Google Calendar API integration using Service Account with personal Gmail account
+// Google Calendar API integration using Service Account with personal Gmail account
 (function() {
     // Path configuration for GitHub Pages
     const APP_PATH = ''; // Empty string for GitHub Pages
@@ -322,8 +322,8 @@
                     // If we're on the time selection step, regenerate the time slots
                     if (bookingState.currentStep === 4) {
                         // Call the generateTimeSlots function if it exists
-                        if (typeof generateTimeSlots === 'function') {
-                            generateTimeSlots(date);
+                        if (typeof window.generateTimeSlots === 'function') {
+                            window.generateTimeSlots(date);
                         }
                     }
                 }
@@ -524,3 +524,4 @@
     
     // Add scripts immediately
     addGoogleScripts();
+})();
