@@ -17,22 +17,28 @@
     // Create global googleCalendarIntegration object
     window.googleCalendarIntegration = {
         isAuthenticated: false,
-        gapi: null,
-        jwtClient: null,
+        authInProgress: false,
         
         // Initialize Google API with service account
         initializeGoogleAPI: async function() {
             try {
                 console.log('Initializing Google API with service account');
+                if (this.authInProgress) {
+                    console.log('Authentication already in progress, waiting...');
+                    return;
+                }
                 
-                // Load the required libraries
-                await this.loadGapiClient();
+                this.authInProgress = true;
                 
-                // Initialize JWT client for service account auth
-                await this.initializeJwtClient();
+                // Load required scripts if they don't exist
+                await this.loadRequiredScripts();
+                
+                // Create JWT client for service account
+                const authClient = await this.createJwtClient();
                 
                 // Set the authentication flag
                 this.isAuthenticated = true;
+                this.authInProgress = false;
                 console.log('Service account authentication successful');
                 
                 // Initialize booking state if available
@@ -41,39 +47,73 @@
                     
                     // If date is already selected, fetch slots
                     if (window.bookingState.date) {
-                        window.googleCalendarIntegration.fetchAvailableSlotsFromGoogleCalendar(window.bookingState.date, window.bookingState);
+                        this.fetchAvailableSlotsFromGoogleCalendar(window.bookingState.date, window.bookingState);
                     }
                 }
+                
+                return authClient;
             } catch (error) {
+                this.authInProgress = false;
                 console.error('Error initializing Google API with service account:', error);
+                // Continue with app functionality even if calendar fails
+                return null;
             }
         },
         
-        // Load the GAPI client
-        loadGapiClient: function() {
-            return new Promise((resolve, reject) => {
-                gapi.load('client', async () => {
-                    try {
-                        await gapi.client.init({
-                            apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo', // Replace with your API key from personal Gmail project if needed
-                            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
-                        });
-                        this.gapi = gapi;
-                        resolve();
-                    } catch (error) {
-                        reject(error);
-                    }
+        // Load required scripts (gapi and googleapis)
+        loadRequiredScripts: async function() {
+            const scriptsToLoad = [];
+            
+            // Check if gapi is loaded
+            if (typeof gapi === 'undefined') {
+                scriptsToLoad.push(this.loadScript('https://apis.google.com/js/api.js'));
+            }
+            
+            // Check if google auth is loaded
+            if (typeof google === 'undefined' || !google.auth) {
+                scriptsToLoad.push(this.loadScript('https://accounts.google.com/gsi/client'));
+            }
+            
+            // Wait for all scripts to load
+            if (scriptsToLoad.length > 0) {
+                await Promise.all(scriptsToLoad);
+                // Wait a moment for scripts to initialize
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            // Load gapi client
+            if (!gapi.client) {
+                await new Promise((resolve) => {
+                    gapi.load('client', resolve);
                 });
+            }
+            
+            // Initialize gapi client
+            await gapi.client.init({
+                apiKey: 'AIzaSyCIB0VXUzsQjxrz9g8QIzeu8UVf9ohbWgo',
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
             });
         },
         
-        // Initialize JWT client for service account
-        initializeJwtClient: async function() {
+        // Helper function to load a script
+        loadScript: function(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
+        },
+        
+        // Create JWT client for service account
+        createJwtClient: async function() {
             try {
-                // Import the required gapi auth libraries
-                await new Promise((resolve) => gapi.load('client:auth2', resolve));
+                if (typeof google === 'undefined' || !google.auth || !google.auth.JWT) {
+                    throw new Error('Google auth library not loaded');
+                }
                 
-                // Set up JWT client
+                // Create JWT client
                 const authClient = new google.auth.JWT(
                     SERVICE_ACCOUNT.client_email,
                     null,
@@ -83,7 +123,7 @@
                 );
                 
                 // Authenticate
-                await new Promise((resolve, reject) => {
+                const tokens = await new Promise((resolve, reject) => {
                     authClient.authorize((err, tokens) => {
                         if (err) {
                             reject(err);
@@ -93,14 +133,15 @@
                     });
                 });
                 
-                // Set the auth client
+                // Set the auth token for gapi
                 gapi.client.setToken({
-                    access_token: authClient.credentials.access_token
+                    access_token: tokens.access_token
                 });
                 
                 this.jwtClient = authClient;
+                return authClient;
             } catch (error) {
-                console.error('Error initializing JWT client:', error);
+                console.error('Error creating JWT client:', error);
                 throw error;
             }
         },
@@ -108,12 +149,12 @@
         // Refresh token if expired
         refreshAuthToken: async function() {
             if (!this.jwtClient) {
-                await this.initializeJwtClient();
+                await this.initializeGoogleAPI();
                 return;
             }
             
             try {
-                await new Promise((resolve, reject) => {
+                const tokens = await new Promise((resolve, reject) => {
                     this.jwtClient.authorize((err, tokens) => {
                         if (err) {
                             reject(err);
@@ -128,6 +169,8 @@
                         resolve(tokens);
                     });
                 });
+                
+                return tokens;
             } catch (error) {
                 console.error('Error refreshing auth token:', error);
                 throw error;
@@ -140,6 +183,12 @@
                 // Make sure we're authenticated
                 if (!this.isAuthenticated) {
                     await this.initializeGoogleAPI();
+                }
+                
+                // Check if auth was successful
+                if (!this.isAuthenticated) {
+                    console.log('Unable to authenticate with Google Calendar. Using local booking data only.');
+                    return bookingState.bookedSlots[date] || [];
                 }
                 
                 // Refresh token if needed
@@ -198,7 +247,9 @@
                 
             } catch (error) {
                 console.error('Error fetching events from Google Calendar:', error);
-                return [];
+                
+                // Return existing booked slots as fallback
+                return bookingState.bookedSlots[date] || [];
             }
         },
         
@@ -208,6 +259,12 @@
                 // Make sure we're authenticated
                 if (!this.isAuthenticated) {
                     await this.initializeGoogleAPI();
+                }
+                
+                // If still not authenticated, gracefully return
+                if (!this.isAuthenticated) {
+                    console.log('Unable to authenticate with Google Calendar. Event not added.');
+                    return null;
                 }
                 
                 // Refresh token if needed
@@ -343,27 +400,10 @@
     
     // Initialize when document is ready
     document.addEventListener('DOMContentLoaded', function() {
-        // Check if Google API is loaded
-        if (typeof gapi !== 'undefined') {
-            window.googleCalendarIntegration.initializeGoogleAPI();
-        } else {
-            console.warn('Google API libraries not loaded. Calendar integration will be disabled.');
-            
-            // Try to load the libraries
-            const gapiScript = document.createElement('script');
-            gapiScript.src = 'https://apis.google.com/js/api.js';
-            gapiScript.onload = () => {
-                console.log('GAPI loaded dynamically');
-                
-                const gsiScript = document.createElement('script');
-                gsiScript.src = 'https://accounts.google.com/gsi/client';
-                gsiScript.onload = () => {
-                    console.log('GSI loaded dynamically');
-                    window.googleCalendarIntegration.initializeGoogleAPI();
-                };
-                document.body.appendChild(gsiScript);
-            };
-            document.body.appendChild(gapiScript);
-        }
+        // Start authentication immediately without waiting for user action
+        window.googleCalendarIntegration.initializeGoogleAPI().catch(error => {
+            console.error('Failed to initialize Google Calendar integration:', error);
+            // Continue with app functionality even if calendar auth fails
+        });
     });
 })();
