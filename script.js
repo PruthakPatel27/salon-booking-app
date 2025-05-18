@@ -829,7 +829,7 @@ END:VCALENDAR`;
         link.click();
         document.body.removeChild(link);
     });
-// Simple Reschedule Button Handler for Testing
+// Reschedule button handler
 document.getElementById('reschedule-btn').addEventListener('click', function() {
     // Store old date and time for later reference (to free up the slot)
     const oldDate = bookingState.date;
@@ -857,9 +857,6 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
             }
             bookingState.bookedSlots[bookingState.date].push(bookingState.time);
             
-            // Log the action instead of making API calls 
-            console.log('Reschedule action - would update Google Calendar event');
-            
             // Create booking data object for reschedule
             const bookingData = {
                 appointmentId: bookingState.appointmentId,
@@ -877,6 +874,40 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 oldTime: oldTime
             };
             
+            // Update Google Calendar event via Firebase Function
+            async function updateCalendarEvent() {
+                try {
+                    // Call our new updateEvent function
+                    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/updateEvent', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            eventId: bookingState.googleCalendarEventId,
+                            bookingData: bookingData
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        console.log('Google Calendar event updated successfully via API');
+                    } else {
+                        console.error('Failed to update Google Calendar event via API:', result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating Google Calendar event:', error);
+                }
+            }
+            
+            // Execute the update if we have an event ID
+            if (bookingState.googleCalendarEventId) {
+                updateCalendarEvent();
+            } else {
+                console.log('No Google Calendar event ID found, skipping update');
+            }
+
             // Send reschedule notifications
             sendConfirmations(bookingData);
             goToStep('confirmation');
