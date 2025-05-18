@@ -590,27 +590,40 @@ async function submitBooking() {
     // In a real application, this would be sent to your backend
     console.log('Booking submitted:', bookingData);
     
-    // Add to Google Calendar if integration is available and authenticated
-    if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
-        try {
-            const eventId = await window.googleCalendarIntegration.addEventToGoogleCalendar(bookingData);
-            if (eventId) {
-                bookingState.googleCalendarEventId = eventId;
-                console.log('Event added to Google Calendar with ID:', eventId);
-            }
-        } catch (error) {
-            console.error('Failed to add event to Google Calendar:', error);
-        }
-    }
+  // Add to Google Calendar via our API
+  try {
+    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/addEvent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bookingData)
+    });
+
+    const result = await response.json();
     
-    // Mock successful booking - Add the time slot to booked slots
-    if (!bookingState.bookedSlots[bookingState.date]) {
-        bookingState.bookedSlots[bookingState.date] = [];
+    if (result.success) {
+      // Store the event ID for potential updates/cancellations later
+      bookingState.googleCalendarEventId = result.eventId;
+      console.log('Event added to Google Calendar with ID:', result.eventId);
+    } else {
+      console.error('Failed to add event to Google Calendar:', result.error);
     }
-    bookingState.bookedSlots[bookingState.date].push(bookingState.time);
-    
-    // Send confirmation emails and SMS
-    sendConfirmations(bookingData);
+  } catch (error) {
+    console.error('Error adding event to Google Calendar:', error);
+  }
+  
+  // Mock successful booking - Add the time slot to booked slots
+  if (!bookingState.bookedSlots[bookingState.date]) {
+    bookingState.bookedSlots[bookingState.date] = [];
+  }
+  bookingState.bookedSlots[bookingState.date].push(bookingState.time);
+  
+  // Send confirmation emails and SMS
+  sendConfirmations(bookingData);
+  
+  // Go to confirmation step
+  goToStep('confirmation');
 }
     
     // Send confirmations
