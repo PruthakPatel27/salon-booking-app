@@ -834,6 +834,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
     // Store old date and time for later reference (to free up the slot)
     const oldDate = bookingState.date;
     const oldTime = bookingState.time;
+    const oldEventId = bookingState.googleCalendarEventId;
     
     // Save the original next button function
     const originalNextFunction = nextBtn.onclick;
@@ -871,9 +872,32 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 smsConsent: bookingState.smsConsent,
                 isRescheduled: true,
                 oldDate: oldDate,
-                oldTime: oldTime
+                oldTime: oldTime,
+                eventId: oldEventId // Include the Google Calendar event ID
             };
-            
+            // Update Google Calendar event via API
+            if (oldEventId) {
+                try {
+                    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/addEvent', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(bookingData)
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        // Store the new event ID
+                        bookingState.googleCalendarEventId = result.eventId;
+                        console.log('Google Calendar event updated with new ID:', result.eventId);
+                    } else {
+                        console.error('Failed to update Google Calendar event:', result.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating Google Calendar event:', error);
+                }
+            }
             sendConfirmations(bookingData);
             goToStep('confirmation');
             
