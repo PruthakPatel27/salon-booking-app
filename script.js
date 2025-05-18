@@ -3774,4 +3774,48 @@ function showCustomSuccessMessage(message) {
     
     // Make generateTimeSlots function globally accessible for Google Calendar integration
     window.generateTimeSlots = generateTimeSlots;
+    // Delete event from calendar
+exports.deleteEvent = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
+  if (req.method !== 'DELETE') {
+    res.status(405).send('Method Not Allowed');
+    return;
+  }
+  
+  try {
+    const eventId = req.query.eventId;
+    
+    if (!eventId) {
+      res.status(400).send({ error: 'Missing eventId parameter' });
+      return;
+    }
+    
+    const calendar = getCalendarAuth();
+    
+    await calendar.events.delete({
+      calendarId: CALENDAR_ID,
+      eventId: eventId
+    });
+    
+    res.status(200).send({
+      success: true
+    });
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
 });
