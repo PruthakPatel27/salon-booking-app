@@ -829,7 +829,7 @@ END:VCALENDAR`;
         link.click();
         document.body.removeChild(link);
     });
-// Reschedule button handler
+// Simple Reschedule Button Handler for Testing
 document.getElementById('reschedule-btn').addEventListener('click', function() {
     // Store old date and time for later reference (to free up the slot)
     const oldDate = bookingState.date;
@@ -857,6 +857,9 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
             }
             bookingState.bookedSlots[bookingState.date].push(bookingState.time);
             
+            // Log the action instead of making API calls 
+            console.log('Reschedule action - would update Google Calendar event');
+            
             // Create booking data object for reschedule
             const bookingData = {
                 appointmentId: bookingState.appointmentId,
@@ -874,74 +877,6 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 oldTime: oldTime
             };
             
-            // Update Google Calendar event via API endpoint
-            async function updateCalendarEvent() {
-                try {
-                    // First try using the API endpoint
-                    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/updateEvent', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            eventId: bookingState.googleCalendarEventId,
-                            bookingData: bookingData
-                        })
-                    });
-
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        console.log('Google Calendar event updated successfully via API');
-                    } else {
-                        console.error('Failed to update Google Calendar event via API:', result.error);
-                        
-                        // Fallback to client-side update if API fails
-                        if (window.googleCalendarIntegration && 
-                            window.googleCalendarIntegration.isAuthenticated && 
-                            bookingState.googleCalendarEventId) {
-                            
-                            const success = await window.googleCalendarIntegration.updateEventInGoogleCalendar(
-                                bookingState.googleCalendarEventId, 
-                                bookingData
-                            );
-                            
-                            if (success) {
-                                console.log('Google Calendar event updated successfully via client-side fallback');
-                            } else {
-                                console.error('Failed to update Google Calendar event via client-side fallback');
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error updating Google Calendar event:', error);
-                    
-                    // Fallback to client-side update if API call fails
-                    if (window.googleCalendarIntegration && 
-                        window.googleCalendarIntegration.isAuthenticated && 
-                        bookingState.googleCalendarEventId) {
-                        
-                        try {
-                            const success = await window.googleCalendarIntegration.updateEventInGoogleCalendar(
-                                bookingState.googleCalendarEventId, 
-                                bookingData
-                            );
-                            
-                            if (success) {
-                                console.log('Google Calendar event updated successfully via client-side fallback');
-                            } else {
-                                console.error('Failed to update Google Calendar event via client-side fallback');
-                            }
-                        } catch (innerError) {
-                            console.error('Error in client-side fallback for calendar update:', innerError);
-                        }
-                    }
-                }
-            }
-            
-            // Execute the update
-            updateCalendarEvent();
-
             // Send reschedule notifications
             sendConfirmations(bookingData);
             goToStep('confirmation');
@@ -976,7 +911,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
         }
     }, true); // Use capturing phase to run before other handlers
 });
-// Cancel button handler
+// Simple Cancel Button Handler for Testing
 document.getElementById('cancel-btn').addEventListener('click', function() {
     // Show custom confirmation dialog instead of browser's confirm()
     const customDialog = document.getElementById('custom-confirm-dialog');
@@ -997,7 +932,10 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
         if (index > -1) {
             bookedSlotsForDate.splice(index, 1);
         }
-
+        
+        // Log the action instead of making API calls
+        console.log('Cancel action - would delete Google Calendar event');
+        
         // Reset to step 1
         bookingState.currentStep = 1;
         
@@ -1024,6 +962,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             email: '',
             phone: ''
         };
+        bookingState.googleCalendarEventId = null;
         
         // Go to step 1
         goToStep(1);
