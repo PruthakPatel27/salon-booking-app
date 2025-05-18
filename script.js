@@ -942,7 +942,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
         }
     }, true); // Use capturing phase to run before other handlers
 });
-// Simple Cancel Button Handler for Testing
+// Cancel button handler
 document.getElementById('cancel-btn').addEventListener('click', function() {
     // Show custom confirmation dialog instead of browser's confirm()
     const customDialog = document.getElementById('custom-confirm-dialog');
@@ -964,8 +964,42 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             bookedSlotsForDate.splice(index, 1);
         }
         
-        // Log the action instead of making API calls
-        console.log('Cancel action - would delete Google Calendar event');
+        // Delete event from Google Calendar via Firebase Function
+        async function deleteCalendarEvent() {
+            // Only proceed if we have an event ID
+            if (!bookingState.googleCalendarEventId) {
+                console.log('No Google Calendar event ID found, skipping deletion');
+                return;
+            }
+            
+            try {
+                // Call our new deleteEvent function
+                const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/deleteEvent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        eventId: bookingState.googleCalendarEventId
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log('Google Calendar event deleted successfully via API');
+                } else {
+                    console.error('Failed to delete Google Calendar event via API:', result.error);
+                }
+            } catch (error) {
+                console.error('Error deleting Google Calendar event:', error);
+            }
+        }
+        
+        // Execute the deletion if we have an event ID
+        if (bookingState.googleCalendarEventId) {
+            deleteCalendarEvent();
+        }
         
         // Reset to step 1
         bookingState.currentStep = 1;
