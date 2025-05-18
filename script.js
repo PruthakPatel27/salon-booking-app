@@ -958,27 +958,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
         if (index > -1) {
             bookedSlotsForDate.splice(index, 1);
         }
-        // Delete Google Calendar event if available
-        if (bookingState.googleCalendarEventId) {
-            try {
-                // Call the Firebase Function to delete the Google Calendar event
-                const response = await fetch(`https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/deleteEvent?eventId=${bookingState.googleCalendarEventId}`, {
-                    method: 'DELETE'
-                });
-                
-                const result = await response.json();
-                if (result && result.success) {
-                    console.log('Google Calendar event deleted successfully');
-                } else {
-                    console.error('Failed to delete Google Calendar event:', result ? result.error : 'Unknown error');
-                }
-            } catch (error) {
-                console.error('Error deleting Google Calendar event:', error);
-            }
-            
-            // Clear the event ID
-            bookingState.googleCalendarEventId = null;
-        }
+
         // Reset to step 1
         bookingState.currentStep = 1;
         
