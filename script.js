@@ -53,26 +53,54 @@ const phoneInput = window.intlTelInput(document.getElementById('phone'), {
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/utils.js"
 });
     
-	// Initialize date picker
-	    const datePicker = flatpickr("#date-picker", {
-	        minDate: "today",
-	        dateFormat: "Y-m-d",
-	        disable: [
-	            function(date) {
-	                // Disable weekends
-	                return date.getDay() === 0; // Sunday
-	            }
-	        ],
-	        onChange: function(selectedDates, dateStr) {
-	            bookingState.date = dateStr;
-	            updateSummary();
-	            
-	            // If using Google Calendar, fetch available slots
-	            if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
-	                window.googleCalendarIntegration.fetchAvailableSlotsFromGoogleCalendar(dateStr, bookingState);
-	            }
-	        }
-    });
+// Initialize date picker
+const datePicker = flatpickr("#date-picker", {
+    minDate: "today",
+    dateFormat: "Y-m-d",
+    disable: [
+        function(date) {
+            // Disable weekends
+            return date.getDay() === 0; // Sunday
+        }
+    ],
+    onChange: async function(selectedDates, dateStr) {
+        bookingState.date = dateStr;
+        
+        try {
+            // Show loading indicator if you have one
+            // For example: document.getElementById('time-slots').innerHTML = '<div class="loading">Loading time slots...</div>';
+            
+            // Fetch booked slots from Google Calendar using your Firebase Function
+            const response = await fetch(`https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/getEvents?date=${dateStr}`);
+            
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update booking state with the booked slots
+                bookingState.bookedSlots[dateStr] = result.bookedSlots.map(slot => slot.time);
+                console.log(`Fetched ${result.bookedSlots.length} booked slots for ${dateStr}:`, result.bookedSlots);
+            } else {
+                console.error('Error fetching booked slots:', result.error);
+                // Use any existing data as fallback
+            }
+        } catch (error) {
+            console.error('Error fetching booked slots from API:', error);
+            // If API call fails, proceed with any existing booked slots data
+        } finally {
+            // Generate time slots based on the updated booked slots
+            if (typeof generateTimeSlots === 'function') {
+                generateTimeSlots(dateStr);
+            }
+            
+            // Update the booking summary
+            updateSummary();
+        }
+    }
+});
 
     // Service Selection
     const serviceCards = document.querySelectorAll('.service-card');
