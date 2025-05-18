@@ -53,26 +53,29 @@ const phoneInput = window.intlTelInput(document.getElementById('phone'), {
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/utils.js"
 });
     
-    // Initialize date picker
-    const datePicker = flatpickr("#date-picker", {
-        minDate: "today",
-        dateFormat: "Y-m-d",
-        disable: [
-            function(date) {
-                // Disable weekends
-                return date.getDay() === 0; // Sunday
-            }
-        ],
-        onChange: function(selectedDates, dateStr) {
-            bookingState.date = dateStr;
-            updateSummary();
-            
-            // If using Google Calendar, fetch available slots
-            if (window.googleCalendarIntegration && window.googleCalendarIntegration.isAuthenticated) {
-                window.googleCalendarIntegration.fetchAvailableSlotsFromGoogleCalendar(dateStr, bookingState);
-            }
-        }
-    });
+datePicker.onChange = async function(selectedDates, dateStr) {
+  bookingState.date = dateStr;
+  
+  try {
+    // Fetch booked slots from Google Calendar API
+    const response = await fetch(`https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/getEvents?date=${dateStr}`);
+    const result = await response.json();
+    
+    if (result.success) {
+      // Update the booking state with the booked slots from Google Calendar
+      bookingState.bookedSlots[dateStr] = result.bookedSlots.map(slot => slot.time);
+      console.log('Fetched booked slots from Google Calendar:', bookingState.bookedSlots[dateStr]);
+    } else {
+      console.error('Error fetching booked slots:', result.error);
+    }
+  } catch (error) {
+    console.error('Error fetching booked slots:', error);
+  }
+  
+  // Generate time slots
+  generateTimeSlots(dateStr);
+  updateSummary();
+};
 
     // Service Selection
     const serviceCards = document.querySelectorAll('.service-card');
