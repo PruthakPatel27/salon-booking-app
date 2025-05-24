@@ -141,7 +141,8 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-// STEP 1: Replace the existing generateTimeSlots function in script.js with this enhanced version
+// FIXED: Replace the existing generateTimeSlots function in script.js
+
 function generateTimeSlots(date) {
     const timeGrid = document.getElementById('time-slots');
     timeGrid.innerHTML = '';
@@ -160,33 +161,35 @@ function generateTimeSlots(date) {
         serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
     }
     
-    // Create array of blocked time ranges from existing bookings
-    const blockedRanges = [];
+    // Create a Set of ALL blocked time slots (not just start times)
+    const blockedTimeSlots = new Set();
     
-    // Process each booked slot to create blocked ranges
+    // For each existing booking, block ALL time slots it occupies
     bookedSlotsForDate.forEach(bookedTimeStr => {
         const [bookedHour, bookedMinute] = bookedTimeStr.split(':').map(Number);
-        const bookedStartTime = bookedHour * 60 + bookedMinute;
+        const bookedStartMinutes = bookedHour * 60 + bookedMinute;
         
-        // For existing bookings, assume standard duration (we'll enhance this in step 2)
-        const assumedDuration = 75; // Conservative estimate for existing bookings
-        const bookedEndTime = bookedStartTime + assumedDuration;
+        // Assume 75 minutes for existing bookings (conservative estimate)
+        const existingAppointmentDuration = 75;
         
-        blockedRanges.push({
-            start: bookedStartTime,
-            end: bookedEndTime,
-            type: 'existing'
-        });
+        // Block every 10-minute slot that this appointment occupies
+        for (let i = 0; i < existingAppointmentDuration; i += 10) {
+            const blockedMinutes = bookedStartMinutes + i;
+            const blockedHour = Math.floor(blockedMinutes / 60);
+            const blockedMin = blockedMinutes % 60;
+            const blockedTimeStr = `${blockedHour.toString().padStart(2, '0')}:${blockedMin.toString().padStart(2, '0')}`;
+            blockedTimeSlots.add(blockedTimeStr);
+        }
     });
     
     // Generate time slots
     for (let hour = startHour; hour < endHour; hour++) {
         for (let minute = 0; minute < 60; minute += interval) {
-            const slotStartTime = hour * 60 + minute;
-            const slotEndTime = slotStartTime + serviceDuration;
+            const slotStartMinutes = hour * 60 + minute;
+            const slotEndMinutes = slotStartMinutes + serviceDuration;
             
             // Skip slots that would extend beyond closing time
-            if (slotEndTime > endHour * 60) continue;
+            if (slotEndMinutes > endHour * 60) continue;
             
             const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const timeSlot = document.createElement('div');
@@ -194,26 +197,25 @@ function generateTimeSlots(date) {
             timeSlot.textContent = timeStr;
             timeSlot.dataset.time = timeStr;
             
-            // Check if this slot conflicts with any blocked ranges
+            // Check if ANY part of this new appointment would conflict
             let isDisabled = false;
-            let conflictReason = '';
             
-            for (const blockedRange of blockedRanges) {
-                // Check if the new appointment would overlap with existing booking
-                if (!(slotEndTime <= blockedRange.start || slotStartTime >= blockedRange.end)) {
+            // Check every 10-minute increment of the new appointment
+            for (let i = 0; i < serviceDuration; i += 10) {
+                const checkMinutes = slotStartMinutes + i;
+                const checkHour = Math.floor(checkMinutes / 60);
+                const checkMin = checkMinutes % 60;
+                const checkTimeStr = `${checkHour.toString().padStart(2, '0')}:${checkMin.toString().padStart(2, '0')}`;
+                
+                if (blockedTimeSlots.has(checkTimeStr)) {
                     isDisabled = true;
-                    const conflictStart = Math.floor(blockedRange.start / 60);
-                    const conflictEnd = Math.floor(blockedRange.end / 60);
-                    conflictReason = `Conflicts with appointment ${conflictStart}:00-${conflictEnd}:00`;
                     break;
                 }
             }
             
             if (isDisabled) {
                 timeSlot.classList.add('disabled');
-                timeSlot.title = `${conflictReason} (Your ${serviceDuration}min appointment would overlap)`;
             } else {
-                timeSlot.title = `Available for ${serviceDuration}min appointment (${timeStr} - ${Math.floor(slotEndTime/60)}:${(slotEndTime%60).toString().padStart(2,'0')})`;
                 timeSlot.addEventListener('click', () => {
                     if (!timeSlot.classList.contains('disabled')) {
                         // Deselect all other time slots
@@ -235,25 +237,20 @@ function generateTimeSlots(date) {
         }
     }
     
-    // Add helpful note about duration-based blocking
-    const note = document.createElement('div');
-    note.style.cssText = `
-        grid-column: 1 / -1;
-        text-align: center;
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 15px;
-        padding: 10px;
-        background-color: #f9f9f9;
-        border-radius: 4px;
-        border: 1px solid #e0e0e0;
-    `;
-    note.innerHTML = `
-        <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
-        Time slots are calculated for your ${serviceDuration}-minute appointment
-        ${serviceDuration > 30 ? '<br><small>Longer appointments block more consecutive time slots</small>' : ''}
-    `;
-    timeGrid.appendChild(note);
+    // Add simple info note (no tooltips)
+    if (serviceDuration > 30) {
+        const note = document.createElement('div');
+        note.style.cssText = `
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        `;
+        note.textContent = `${serviceDuration}-minute appointment duration`;
+        timeGrid.appendChild(note);
+    }
 }
     
     // Add-on Selection
