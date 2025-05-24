@@ -141,7 +141,7 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-    // Generate time slots
+    // UPDATED: Generate time slots with duration-based blocking
     function generateTimeSlots(date) {
         const timeGrid = document.getElementById('time-slots');
         timeGrid.innerHTML = '';
@@ -154,15 +154,19 @@ const datePicker = flatpickr("#date-picker", {
         // Get booked slots for this date
         const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
         
-        // Get service duration (minutes)
-        const serviceDuration = bookingState.service ? bookingState.service.duration : 30;
+        // Get current service duration + addons
+        let serviceDuration = bookingState.service ? bookingState.service.duration : 30;
+        if (bookingState.addons && bookingState.addons.length > 0) {
+            serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
+        }
         
         // Generate time slots
         for (let hour = startHour; hour < endHour; hour++) {
             for (let minute = 0; minute < 60; minute += interval) {
-                // Skip slots that would extend beyond closing time
                 const slotTime = hour * 60 + minute;
                 const endTime = slotTime + serviceDuration;
+                
+                // Skip slots that would extend beyond closing time
                 if (endTime > endHour * 60) continue;
                 
                 const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
@@ -171,19 +175,16 @@ const datePicker = flatpickr("#date-picker", {
                 timeSlot.textContent = timeStr;
                 timeSlot.dataset.time = timeStr;
                 
-                // Check if this slot is already booked
+                // Check if this slot would conflict with any booked slots
                 let isDisabled = false;
                 
-                // Check if this slot would overlap with any booked slots
                 for (const bookedTime of bookedSlotsForDate) {
                     const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
                     const bookedSlotTime = bookedHour * 60 + bookedMinute;
+                    const bookedEndTime = bookedSlotTime + 75; // Assume 75 minutes for existing appointments
                     
-                    // Check if the current slot overlaps with this booked slot
-                    if (
-                        (slotTime <= bookedSlotTime && bookedSlotTime < endTime) || 
-                        (bookedSlotTime <= slotTime && slotTime < bookedSlotTime + 30)
-                    ) {
+                    // Check if new appointment overlaps with existing appointment
+                    if (!(endTime <= bookedSlotTime || slotTime >= bookedEndTime)) {
                         isDisabled = true;
                         break;
                     }
@@ -193,7 +194,6 @@ const datePicker = flatpickr("#date-picker", {
                     timeSlot.classList.add('disabled');
                 } else {
                     timeSlot.addEventListener('click', () => {
-                        // Only allow selection if not disabled
                         if (!timeSlot.classList.contains('disabled')) {
                             // Deselect all other time slots
                             document.querySelectorAll('.time-slot').forEach(slot => {
@@ -215,7 +215,7 @@ const datePicker = flatpickr("#date-picker", {
         }
     }
     
-    // Add-on Selection
+    // UPDATED: Add-on Selection with time slot regeneration
     const addonCards = document.querySelectorAll('.addon-card');
     addonCards.forEach(card => {
         card.addEventListener('click', () => {
@@ -242,6 +242,11 @@ const datePicker = flatpickr("#date-picker", {
             }
             
             updateSummary();
+            
+            // ADDED: Regenerate time slots if date is already selected
+            if (bookingState.date) {
+                generateTimeSlots(bookingState.date);
+            }
         });
     });
     
