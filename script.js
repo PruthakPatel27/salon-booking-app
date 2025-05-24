@@ -70,7 +70,7 @@ const datePicker = flatpickr("#date-picker", {
             // For example: document.getElementById('time-slots').innerHTML = '<div class="loading">Loading time slots...</div>';
             
             // Fetch booked slots from Google Calendar using your Firebase Function
-            const response = await fetch(`https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/getEvents?date=${dateStr}`);
+            const response = await fetch(`https://getevents-is52ejehnq-uc.a.run.app?date=${dateStr}`);
             
             if (!response.ok) {
                 throw new Error(`Server returned ${response.status}: ${response.statusText}`);
@@ -580,7 +580,7 @@ async function submitBooking() {
     
   // Add to Google Calendar via our API
   try {
-    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/addEvent', {
+    const response = await fetch('https://addevent-is52ejehnq-uc.a.run.app', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -839,7 +839,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
             async function updateCalendarEvent() {
                 try {
                     // Call our new updateEvent function
-                    const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/updateEvent', {
+                    const response = await fetch('https://updateevent-is52ejehnq-uc.a.run.app', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -935,7 +935,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             
             try {
                 // Call our new deleteEvent function
-                const response = await fetch('https://us-central1-salon-calendar-api-1a565.cloudfunctions.net/deleteEvent', {
+                const response = await fetch('https://deleteevent-is52ejehnq-uc.a.run.app', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
