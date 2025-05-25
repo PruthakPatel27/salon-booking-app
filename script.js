@@ -596,21 +596,7 @@ nextBtn.addEventListener('click', () => {
             currentStepElement.classList.remove('error');
         }, 500);
     }
-});
-        
-        if (canProceed) {
-            bookingState.currentStep++;
-            goToStep(bookingState.currentStep);
-        } else {
-            // Add visual feedback for the error
-            const currentStepElement = document.querySelector(`.booking-step[data-step="${bookingState.currentStep}"]`);
-            currentStepElement.classList.add('error');
-            setTimeout(() => {
-                currentStepElement.classList.remove('error');
-            }, 500);
-        }
-    });
-    
+}); 
     // Previous button click handler
     prevBtn.addEventListener('click', () => {
         if (bookingState.currentStep > 1) {
