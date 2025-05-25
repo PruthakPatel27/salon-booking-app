@@ -146,114 +146,127 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-    // UPDATED: Generate time slots with duration-based blocking
-    function generateTimeSlots(date) {
-        const timeGrid = document.getElementById('time-slots');
-        timeGrid.innerHTML = '';
-        
-        // Business hours: 9AM to 5PM
-        const startHour = 9;
-        const endHour = 17;
-        const interval = 10; // 10 minutes per slot
-        
-        // Get booked slots for this date
-        const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
-        
-        // Get current service duration + addons
-        let serviceDuration = bookingState.service ? bookingState.service.duration : 30;
-        if (bookingState.addons && bookingState.addons.length > 0) {
-            serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
-        }
-        
-        // Generate time slots
-        for (let hour = startHour; hour < endHour; hour++) {
-            for (let minute = 0; minute < 60; minute += interval) {
-                const slotTime = hour * 60 + minute;
-                const endTime = slotTime + serviceDuration;
+// 2. REPLACE the generateTimeSlots function (around line 125-185) with this:
+
+function generateTimeSlots(date) {
+    const timeGrid = document.getElementById('time-slots');
+    timeGrid.innerHTML = '';
+    
+    // Business hours: 9AM to 5PM
+    const startHour = 9;
+    const endHour = 17;
+    const interval = 10; // 10 minutes per slot
+    
+    // Get booked slots for this date
+    const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
+    
+    // Calculate current service duration + addons
+    let serviceDuration = bookingState.service ? bookingState.service.duration : 30;
+    if (bookingState.addons && bookingState.addons.length > 0) {
+        serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
+    }
+    
+    console.log(`=== Generating time slots for ${date} ===`);
+    console.log(`Your appointment duration: ${serviceDuration} minutes`);
+    console.log(`Existing bookings:`, bookedSlotsForDate);
+    
+    // Generate time slots
+    for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += interval) {
+            const slotTime = hour * 60 + minute;
+            const endTime = slotTime + serviceDuration;
+            
+            // Skip slots that would extend beyond closing time
+            if (endTime > endHour * 60) continue;
+            
+            const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = timeStr;
+            timeSlot.dataset.time = timeStr;
+            
+            // Check if this slot would conflict with any booked slots
+            let isDisabled = false;
+            let conflictReason = '';
+            
+            for (const bookedTime of bookedSlotsForDate) {
+                const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
+                const bookedSlotTime = bookedHour * 60 + bookedMinute;
                 
-                // Skip slots that would extend beyond closing time
-                if (endTime > endHour * 60) continue;
-                
-                const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = timeStr;
-                timeSlot.dataset.time = timeStr;
-                
-                // Check if this slot would conflict with any booked slots
-                let isDisabled = false;
-                
-                for (const bookedTime of bookedSlotsForDate) {
-                    const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
-                    const bookedSlotTime = bookedHour * 60 + bookedMinute;
-                    const bookedEndTime = bookedSlotTime + 75; // Assume 75 minutes for existing appointments
-                    
-                    // Check if new appointment overlaps with existing appointment
-                    if (!(endTime <= bookedSlotTime || slotTime >= bookedEndTime)) {
-                        isDisabled = true;
-                        break;
-                    }
-                }
-                
-                if (isDisabled) {
-                    timeSlot.classList.add('disabled');
+                // FIXED: Use dynamic duration instead of fixed 75 minutes
+                let existingAppointmentDuration;
+                if (bookingState.isRescheduling && bookingState.totalDuration > 0) {
+                    // If rescheduling, use the current appointment's total duration
+                    existingAppointmentDuration = bookingState.totalDuration;
                 } else {
-                    timeSlot.addEventListener('click', () => {
-                        if (!timeSlot.classList.contains('disabled')) {
-                            // Deselect all other time slots
-                            document.querySelectorAll('.time-slot').forEach(slot => {
-                                slot.classList.remove('selected');
-                            });
-                            
-                            // Select this time slot
-                            timeSlot.classList.add('selected');
-                            
-                            // Update state
-                            bookingState.time = timeStr;
-                            updateSummary();
-                        }
-                    });
+                    // For new bookings, assume reasonable default
+                    existingAppointmentDuration = 75;
                 }
                 
-                timeGrid.appendChild(timeSlot);
+                const bookedEndTime = bookedSlotTime + existingAppointmentDuration;
+                
+                // Check if new appointment overlaps with existing appointment
+                // New: slotTime to endTime
+                // Existing: bookedSlotTime to bookedEndTime
+                const hasOverlap = !(endTime <= bookedSlotTime || slotTime >= bookedEndTime);
+                
+                if (hasOverlap) {
+                    isDisabled = true;
+                    conflictReason = `Conflicts with ${bookedTime} (${existingAppointmentDuration}min existing appointment)`;
+                    console.log(`❌ Slot ${timeStr} blocked: ${conflictReason}`);
+                    break;
+                }
             }
+            
+            if (isDisabled) {
+                timeSlot.classList.add('disabled');
+            } else {
+                console.log(`✅ Slot ${timeStr} available (${timeStr} - ${Math.floor(endTime/60)}:${(endTime%60).toString().padStart(2,'0')})`);
+                timeSlot.addEventListener('click', () => {
+                    if (!timeSlot.classList.contains('disabled')) {
+                        // Deselect all other time slots
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        
+                        // Select this time slot
+                        timeSlot.classList.add('selected');
+                        
+                        // Update state
+                        bookingState.time = timeStr;
+                        updateSummary();
+                    }
+                });
+            }
+            
+            timeGrid.appendChild(timeSlot);
         }
     }
     
-    // UPDATED: Add-on Selection with time slot regeneration
-    const addonCards = document.querySelectorAll('.addon-card');
-    addonCards.forEach(card => {
-        card.addEventListener('click', () => {
-            // Toggle selection
-            card.classList.toggle('selected');
-            
-            // Update state
-            const addonId = card.dataset.id;
-            const addonName = card.querySelector('.addon-name').textContent;
-            const addonPrice = parseFloat(card.dataset.price);
-            const addonDuration = parseInt(card.dataset.duration);
-            
-            if (card.classList.contains('selected')) {
-                // Add add-on
-                bookingState.addons.push({
-                    id: addonId,
-                    name: addonName,
-                    price: addonPrice,
-                    duration: addonDuration
-                });
-            } else {
-                // Remove add-on
-                bookingState.addons = bookingState.addons.filter(addon => addon.id !== addonId);
-            }
-            
-            updateSummary();
-            
-            // ADDED: Regenerate time slots if date is already selected
-            if (bookingState.date) {
-                generateTimeSlots(bookingState.date);
-            }
-        });
-    });
+    // Add debug info panel
+    const debugInfo = document.createElement('div');
+    debugInfo.style.cssText = `
+        grid-column: 1 / -1;
+        background: #f0f8ff;
+        border: 1px solid #ccc;
+        padding: 12px;
+        margin-top: 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #333;
+    `;
+    debugInfo.innerHTML = `
+        <strong>🔍 Debug Info:</strong><br>
+        • Your appointment: ${serviceDuration} minutes<br>
+        • Existing bookings: ${bookedSlotsForDate.length > 0 ? bookedSlotsForDate.join(', ') : 'None'}<br>
+        • Rescheduling: ${bookingState.isRescheduling ? 'Yes' : 'No'}<br>
+        • Service: ${bookingState.service ? bookingState.service.name : 'None'}<br>
+        • Add-ons: ${bookingState.addons.length > 0 ? bookingState.addons.map(a => a.name).join(', ') : 'None'}
+    `;
+    timeGrid.appendChild(debugInfo);
+    
+    console.log(`=== Generated ${document.querySelectorAll('.time-slot:not(.disabled)').length} available slots ===`);
+}
     
     // Form validation
     const customerForm = document.getElementById('customer-form');
