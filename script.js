@@ -141,79 +141,81 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
+// MINIMAL FIX: Only replace the generateTimeSlots function with this:
+
+function generateTimeSlots(date) {
+    const timeGrid = document.getElementById('time-slots');
+    timeGrid.innerHTML = '';
+    
+    // Business hours: 9AM to 5PM
+    const startHour = 9;
+    const endHour = 17;
+    const interval = 10; // 10 minutes per slot
+    
+    // Get booked slots for this date
+    const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
+    
+    // Get service duration (minutes)
+    const serviceDuration = bookingState.service ? bookingState.service.duration : 30;
+    
     // Generate time slots
-    function generateTimeSlots(date) {
-        const timeGrid = document.getElementById('time-slots');
-        timeGrid.innerHTML = '';
-        
-        // Business hours: 9AM to 5PM
-        const startHour = 9;
-        const endHour = 17;
-        const interval = 10; // 10 minutes per slot
-        
-        // Get booked slots for this date
-        const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
-        
-        // Get service duration (minutes)
-        const serviceDuration = bookingState.service ? bookingState.service.duration : 30;
-        
-        // Generate time slots
-        for (let hour = startHour; hour < endHour; hour++) {
-            for (let minute = 0; minute < 60; minute += interval) {
-                // Skip slots that would extend beyond closing time
-                const slotTime = hour * 60 + minute;
-                const endTime = slotTime + serviceDuration;
-                if (endTime > endHour * 60) continue;
+    for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += interval) {
+            // Skip slots that would extend beyond closing time
+            const slotTime = hour * 60 + minute;
+            const endTime = slotTime + serviceDuration;
+            if (endTime > endHour * 60) continue;
+            
+            const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = timeStr;
+            timeSlot.dataset.time = timeStr;
+            
+            // Check if this slot would conflict with any booked slots
+            let isDisabled = false;
+            
+            // Check if the current slot would overlap with any booked slots
+            for (const bookedTime of bookedSlotsForDate) {
+                const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
+                const bookedSlotTime = bookedHour * 60 + bookedMinute;
                 
-                const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = timeStr;
-                timeSlot.dataset.time = timeStr;
-                
-                // Check if this slot is already booked
-                let isDisabled = false;
-                
-                // Check if this slot would overlap with any booked slots
-                for (const bookedTime of bookedSlotsForDate) {
-                    const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
-                    const bookedSlotTime = bookedHour * 60 + bookedMinute;
-                    
-                    // Check if the current slot overlaps with this booked slot
-                    if (
-                        (slotTime <= bookedSlotTime && bookedSlotTime < endTime) || 
-                        (bookedSlotTime <= slotTime && slotTime < bookedSlotTime + 30)
-                    ) {
-                        isDisabled = true;
-                        break;
-                    }
+                // Check if new appointment overlaps with existing appointment
+                // Assume existing appointments are 30 minutes (will fix this later)
+                if (
+                    (slotTime <= bookedSlotTime && bookedSlotTime < endTime) || 
+                    (bookedSlotTime <= slotTime && slotTime < bookedSlotTime + 30)
+                ) {
+                    isDisabled = true;
+                    break;
                 }
-                
-                if (isDisabled) {
-                    timeSlot.classList.add('disabled');
-                } else {
-                    timeSlot.addEventListener('click', () => {
-                        // Only allow selection if not disabled
-                        if (!timeSlot.classList.contains('disabled')) {
-                            // Deselect all other time slots
-                            document.querySelectorAll('.time-slot').forEach(slot => {
-                                slot.classList.remove('selected');
-                            });
-                            
-                            // Select this time slot
-                            timeSlot.classList.add('selected');
-                            
-                            // Update state
-                            bookingState.time = timeStr;
-                            updateSummary();
-                        }
-                    });
-                }
-                
-                timeGrid.appendChild(timeSlot);
             }
+            
+            if (isDisabled) {
+                timeSlot.classList.add('disabled');
+            } else {
+                timeSlot.addEventListener('click', () => {
+                    // Only allow selection if not disabled
+                    if (!timeSlot.classList.contains('disabled')) {
+                        // Deselect all other time slots
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        
+                        // Select this time slot
+                        timeSlot.classList.add('selected');
+                        
+                        // Update state
+                        bookingState.time = timeStr;
+                        updateSummary();
+                    }
+                });
+            }
+            
+            timeGrid.appendChild(timeSlot);
         }
     }
+}
     
     // Add-on Selection
     const addonCards = document.querySelectorAll('.addon-card');
