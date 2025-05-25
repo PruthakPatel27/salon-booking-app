@@ -536,38 +536,67 @@ document.getElementById('phone').addEventListener('input', () => {
         });
     });
     
-    // Next button click handler
-    nextBtn.addEventListener('click', () => {
-        // Validate current step
-        let canProceed = true;
-        
-        switch (bookingState.currentStep) {
-            case 1:
-                canProceed = bookingState.service !== null;
-                break;
-            case 2:
-                canProceed = bookingState.barber !== null;
-                break;
-            case 3:
-                canProceed = bookingState.date !== null;
-                break;
-            case 4:
-                canProceed = bookingState.time !== null;
-                break;
-            case 5:
-                // Add-ons are optional
-                canProceed = true;
-                break;
-            case 6:
-                canProceed = validateForm();
-                if (canProceed) {
-                    // Submit the booking
-                    submitBooking();
-                    goToStep('confirmation');
-                    return;
-                }
-                break;
-        }
+// 2. REPLACE the Next button click handler to FIX add-ons issue:
+
+// Find the Next button click handler (around line 480) and replace it with this:
+nextBtn.addEventListener('click', () => {
+    // Validate current step
+    let canProceed = true;
+    
+    switch (bookingState.currentStep) {
+        case 1:
+            canProceed = bookingState.service !== null;
+            if (!canProceed) {
+                alert('Please select a service');
+            }
+            break;
+        case 2:
+            canProceed = bookingState.barber !== null;
+            if (!canProceed) {
+                alert('Please select a barber');
+            }
+            break;
+        case 3:
+            canProceed = bookingState.date !== null;
+            if (!canProceed) {
+                alert('Please select a date');
+            }
+            break;
+        case 4:
+            canProceed = bookingState.time !== null;
+            if (!canProceed) {
+                alert('Please select a time slot');
+            }
+            break;
+        case 5:
+            // FIXED: Add-ons are optional, always allow proceeding
+            canProceed = true;
+            console.log('Step 5 (Add-ons): Proceeding - add-ons are optional');
+            break;
+        case 6:
+            canProceed = validateForm();
+            if (canProceed) {
+                // Submit the booking
+                submitBooking();
+                goToStep('confirmation');
+                return;
+            }
+            break;
+    }
+    
+    if (canProceed) {
+        console.log(`Moving from step ${bookingState.currentStep} to step ${bookingState.currentStep + 1}`);
+        bookingState.currentStep++;
+        goToStep(bookingState.currentStep);
+    } else {
+        // Add visual feedback for the error
+        const currentStepElement = document.querySelector(`.booking-step[data-step="${bookingState.currentStep}"]`);
+        currentStepElement.classList.add('error');
+        setTimeout(() => {
+            currentStepElement.classList.remove('error');
+        }, 500);
+    }
+});
         
         if (canProceed) {
             bookingState.currentStep++;
