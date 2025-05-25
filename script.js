@@ -146,7 +146,7 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-// 2. REPLACE the generateTimeSlots function (around line 125-185) with this:
+// 1. REPLACE the generateTimeSlots function with this FIXED version:
 
 function generateTimeSlots(date) {
     const timeGrid = document.getElementById('time-slots');
@@ -168,7 +168,7 @@ function generateTimeSlots(date) {
     
     console.log(`=== Generating time slots for ${date} ===`);
     console.log(`Your appointment duration: ${serviceDuration} minutes`);
-    console.log(`Existing bookings:`, bookedSlotsForDate);
+    console.log(`Existing bookings on ${date}:`, bookedSlotsForDate);
     
     // Generate time slots
     for (let hour = startHour; hour < endHour; hour++) {
@@ -189,39 +189,35 @@ function generateTimeSlots(date) {
             let isDisabled = false;
             let conflictReason = '';
             
+            // FIXED: Always check conflicts, not just during rescheduling
             for (const bookedTime of bookedSlotsForDate) {
                 const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
                 const bookedSlotTime = bookedHour * 60 + bookedMinute;
                 
-                // FIXED: Use dynamic duration instead of fixed 75 minutes
-                let existingAppointmentDuration;
-                if (bookingState.isRescheduling && bookingState.totalDuration > 0) {
-                    // If rescheduling, use the current appointment's total duration
-                    existingAppointmentDuration = bookingState.totalDuration;
-                } else {
-                    // For new bookings, assume reasonable default
-                    existingAppointmentDuration = 75;
-                }
-                
+                // Use 75 minutes as default for existing appointments
+                const existingAppointmentDuration = 75;
                 const bookedEndTime = bookedSlotTime + existingAppointmentDuration;
                 
-                // Check if new appointment overlaps with existing appointment
-                // New: slotTime to endTime
-                // Existing: bookedSlotTime to bookedEndTime
+                // Check if new appointment would overlap with existing appointment
+                // New appointment: slotTime to endTime
+                // Existing appointment: bookedSlotTime to bookedEndTime
                 const hasOverlap = !(endTime <= bookedSlotTime || slotTime >= bookedEndTime);
                 
                 if (hasOverlap) {
                     isDisabled = true;
-                    conflictReason = `Conflicts with ${bookedTime} (${existingAppointmentDuration}min existing appointment)`;
-                    console.log(`❌ Slot ${timeStr} blocked: ${conflictReason}`);
+                    conflictReason = `Conflicts with existing ${bookedTime} appointment`;
+                    console.log(`❌ Slot ${timeStr} BLOCKED: Your ${serviceDuration}min appointment (${timeStr}-${Math.floor(endTime/60)}:${(endTime%60).toString().padStart(2,'0')}) overlaps with existing ${bookedTime} appointment (${existingAppointmentDuration}min)`);
                     break;
                 }
+            }
+            
+            if (!isDisabled) {
+                console.log(`✅ Slot ${timeStr} AVAILABLE: ${timeStr}-${Math.floor(endTime/60)}:${(endTime%60).toString().padStart(2,'0')} (${serviceDuration}min)`);
             }
             
             if (isDisabled) {
                 timeSlot.classList.add('disabled');
             } else {
-                console.log(`✅ Slot ${timeStr} available (${timeStr} - ${Math.floor(endTime/60)}:${(endTime%60).toString().padStart(2,'0')})`);
                 timeSlot.addEventListener('click', () => {
                     if (!timeSlot.classList.contains('disabled')) {
                         // Deselect all other time slots
@@ -242,6 +238,36 @@ function generateTimeSlots(date) {
             timeGrid.appendChild(timeSlot);
         }
     }
+    
+    // Add debug info panel
+    const debugInfo = document.createElement('div');
+    debugInfo.style.cssText = `
+        grid-column: 1 / -1;
+        background: #f0f8ff;
+        border: 1px solid #ccc;
+        padding: 12px;
+        margin-top: 15px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #333;
+    `;
+    
+    const availableCount = document.querySelectorAll('.time-slot:not(.disabled)').length;
+    const blockedCount = document.querySelectorAll('.time-slot.disabled').length;
+    
+    debugInfo.innerHTML = `
+        <strong>🔍 Booking Analysis:</strong><br>
+        • Your appointment: ${serviceDuration} minutes<br>
+        • Existing bookings: ${bookedSlotsForDate.length > 0 ? bookedSlotsForDate.join(', ') : 'None'}<br>
+        • Available slots: ${availableCount}<br>
+        • Blocked slots: ${blockedCount}<br>
+        • Service: ${bookingState.service ? bookingState.service.name : 'None'}<br>
+        • Add-ons: ${bookingState.addons.length > 0 ? bookingState.addons.map(a => a.name).join(', ') : 'None'}
+    `;
+    timeGrid.appendChild(debugInfo);
+    
+    console.log(`=== Result: ${availableCount} available, ${blockedCount} blocked ===`);
+}
     
     // Add debug info panel
     const debugInfo = document.createElement('div');
