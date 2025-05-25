@@ -536,9 +536,8 @@ document.getElementById('phone').addEventListener('input', () => {
         });
     });
     
-// 2. REPLACE the Next button click handler to FIX add-ons issue:
+// REPLACE the Next button click handler with this CORRECTED version:
 
-// Find the Next button click handler (around line 480) and replace it with this:
 nextBtn.addEventListener('click', () => {
     // Validate current step
     let canProceed = true;
@@ -547,25 +546,25 @@ nextBtn.addEventListener('click', () => {
         case 1:
             canProceed = bookingState.service !== null;
             if (!canProceed) {
-                alert('Please select a service');
+                console.log('Please select a service');
             }
             break;
         case 2:
             canProceed = bookingState.barber !== null;
             if (!canProceed) {
-                alert('Please select a barber');
+                console.log('Please select a barber');
             }
             break;
         case 3:
             canProceed = bookingState.date !== null;
             if (!canProceed) {
-                alert('Please select a date');
+                console.log('Please select a date');
             }
             break;
         case 4:
             canProceed = bookingState.time !== null;
             if (!canProceed) {
-                alert('Please select a time slot');
+                console.log('Please select a time slot');
             }
             break;
         case 5:
