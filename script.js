@@ -119,6 +119,11 @@ const datePicker = flatpickr("#date-picker", {
             };
             
             updateSummary();
+            // ADD THIS: Regenerate time slots if date is already selected
+        if (bookingState.date) {
+            console.log(`Service changed to ${bookingState.service.name} (${bookingState.service.duration}min), regenerating time slots`);
+            generateTimeSlots(bookingState.date);
+        }
         });
     });
     
