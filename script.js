@@ -23,16 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
         isAuthenticated: false
     };
     
-    // Mock data for already booked slots
-    const mockBookedSlots = {
-        "2025-04-29": ["10:00", "14:30"],
-        "2025-04-30": ["09:00", "11:30", "15:00"],
-        "2025-05-01": ["13:00", "16:30"],
-    };
-    
-    // Initialize with mock data
-    bookingState.bookedSlots = mockBookedSlots;
-    
     // DOM Elements
     const steps = document.querySelectorAll('.booking-step');
     const stepContents = document.querySelectorAll('.step-content');
