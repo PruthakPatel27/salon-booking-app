@@ -109,6 +109,7 @@ const datePicker = flatpickr("#date-picker", {
             };
             
             updateSummary();
+            if (bookingState.date) { generateTimeSlots(bookingState.date); }
         });
     });
     
