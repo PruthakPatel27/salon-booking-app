@@ -132,7 +132,7 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-// 2. REPLACE the generateTimeSlots function (lines 125-185) with this FIXED version:
+// REPLACE the generateTimeSlots function with this DEBUG version to find the timezone issue:
 
 function generateTimeSlots(date) {
     const timeGrid = document.getElementById('time-slots');
@@ -152,18 +152,25 @@ function generateTimeSlots(date) {
         serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
     }
     
-    console.log(`=== Time Slots for ${date} ===`);
-    console.log(`Your appointment: ${serviceDuration} minutes`);
-    console.log(`Google Calendar bookings:`, bookedSlotsForDate);
+    console.log(`=== TIMEZONE DEBUG for ${date} ===`);
+    console.log(`Your appointment duration: ${serviceDuration} minutes`);
+    console.log(`Raw Google Calendar bookings:`, bookedSlotsForDate);
+    
+    // Debug: Show what times we're actually getting from Google Calendar
+    bookedSlotsForDate.forEach(bookedTime => {
+        console.log(`📅 Google Calendar booking time: "${bookedTime}"`);
+        const [hour, minute] = bookedTime.split(':').map(Number);
+        console.log(`   Parsed as: ${hour}:${minute.toString().padStart(2,'0')} (${hour}:${minute.toString().padStart(2,'0')} ${hour >= 12 ? 'PM' : 'AM'})`);
+    });
     
     // Generate time slots
     for (let hour = startHour; hour < endHour; hour++) {
         for (let minute = 0; minute < 60; minute += interval) {
-            const slotTime = hour * 60 + minute; // Convert to minutes from midnight
-            const slotEndTime = slotTime + serviceDuration;
+            const slotStartMinutes = hour * 60 + minute;
+            const slotEndMinutes = slotStartMinutes + serviceDuration;
             
             // Skip slots that would extend beyond closing time
-            if (slotEndTime > endHour * 60) continue;
+            if (slotEndMinutes > endHour * 60) continue;
             
             const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
             const timeSlot = document.createElement('div');
@@ -171,45 +178,45 @@ function generateTimeSlots(date) {
             timeSlot.textContent = timeStr;
             timeSlot.dataset.time = timeStr;
             
-            // Check if this slot conflicts with existing Google Calendar appointments
+            // Check if this slot conflicts with existing appointments
             let isDisabled = false;
+            let conflictDetails = '';
             
             for (const bookedTime of bookedSlotsForDate) {
                 const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
-                const bookedStartTime = bookedHour * 60 + bookedMinute; // Convert to minutes from midnight
-                const bookedEndTime = bookedStartTime + 75; // Assume 75min for existing appointments
+                const bookedStartMinutes = bookedHour * 60 + bookedMinute;
                 
-                // Check if new appointment would overlap with existing appointment
-                // New appointment: slotTime to slotEndTime
-                // Existing appointment: bookedStartTime to bookedEndTime
-                // Overlap occurs if: !(new_end <= existing_start OR new_start >= existing_end)
-                const hasOverlap = !(slotEndTime <= bookedStartTime || slotTime >= bookedEndTime);
+                // Use 75 minutes for existing appointments (9:00-10:15 = 75 minutes)
+                const existingAppointmentDuration = 75;
+                const bookedEndMinutes = bookedStartMinutes + existingAppointmentDuration;
                 
-                if (hasOverlap) {
+                // Check for overlap
+                const overlaps = (slotStartMinutes < bookedEndMinutes) && (slotEndMinutes > bookedStartMinutes);
+                
+                if (overlaps) {
                     isDisabled = true;
-                    console.log(`❌ ${timeStr} blocked - conflicts with ${bookedTime} appointment`);
+                    conflictDetails = `Conflicts with ${bookedTime} appointment (${existingAppointmentDuration}min)`;
+                    console.log(`❌ BLOCKED ${timeStr}: ${conflictDetails}`);
+                    console.log(`   Your slot: ${timeStr} to ${Math.floor(slotEndMinutes/60)}:${(slotEndMinutes%60).toString().padStart(2,'0')}`);
+                    console.log(`   Existing: ${bookedTime} to ${Math.floor(bookedEndMinutes/60)}:${(bookedEndMinutes%60).toString().padStart(2,'0')}`);
                     break;
                 }
             }
             
             if (!isDisabled) {
-                console.log(`✅ ${timeStr} available`);
+                console.log(`✅ AVAILABLE ${timeStr}`);
             }
             
             if (isDisabled) {
                 timeSlot.classList.add('disabled');
+                timeSlot.style.backgroundColor = '#ffcccc'; // Light red for debugging
             } else {
                 timeSlot.addEventListener('click', () => {
                     if (!timeSlot.classList.contains('disabled')) {
-                        // Deselect all other time slots
                         document.querySelectorAll('.time-slot').forEach(slot => {
                             slot.classList.remove('selected');
                         });
-                        
-                        // Select this time slot
                         timeSlot.classList.add('selected');
-                        
-                        // Update state
                         bookingState.time = timeStr;
                         updateSummary();
                     }
@@ -219,6 +226,33 @@ function generateTimeSlots(date) {
             timeGrid.appendChild(timeSlot);
         }
     }
+    
+    // Add temporary debug info
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = `
+        grid-column: 1 / -1;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    `;
+    
+    const availableCount = document.querySelectorAll('.time-slot:not(.disabled)').length;
+    const blockedCount = document.querySelectorAll('.time-slot.disabled').length;
+    
+    debugDiv.innerHTML = `
+        <strong>🔍 TIMEZONE DEBUG:</strong><br>
+        Expected: 9:00-10:15 AM booking should block morning slots<br>
+        Actual Google Calendar times: ${bookedSlotsForDate.join(', ')}<br>
+        Available: ${availableCount} | Blocked: ${blockedCount}
+    `;
+    
+    timeGrid.appendChild(debugDiv);
+    
+    console.log(`=== RESULT: ${availableCount} available, ${blockedCount} blocked ===`);
+}
     
     // Add debug panel
     const debugPanel = document.createElement('div');
