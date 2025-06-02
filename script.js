@@ -79,9 +79,9 @@ const datePicker = flatpickr("#date-picker", {
             const result = await response.json();
             
             if (result.success) {
-                // Update booking state with the booked slots
-                bookingState.bookedSlots[dateStr] = result.bookedSlots.map(slot => slot.time);
-                console.log(`Fetched ${result.bookedSlots.length} booked slots for ${dateStr}:`, result.bookedSlots);
+            // Store the complete booking data with barber information
+            bookingState.bookedSlots[dateStr] = result.bookedSlots;
+            console.log(`Fetched ${result.bookedSlots.length} booked slots for ${dateStr}:`, result.bookedSlots);
             } else {
                 console.error('Error fetching booked slots:', result.error);
                 // Use any existing data as fallback
