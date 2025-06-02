@@ -131,79 +131,88 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
+function generateTimeSlots(date) {
+    const timeGrid = document.getElementById('time-slots');
+    timeGrid.innerHTML = '';
+    
+    // Business hours: 9AM to 5PM
+    const startHour = 9;
+    const endHour = 17;
+    const interval = 10; // 10 minutes per slot
+    
+    // Get booked slots for this date (now contains booking objects)
+    const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
+    
+    // Get current service duration + addons
+    let serviceDuration = bookingState.service ? bookingState.service.duration : 30;
+    if (bookingState.addons && bookingState.addons.length > 0) {
+        serviceDuration += bookingState.addons.reduce((total, addon) => total + addon.duration, 0);
+    }
+    
+    // Get currently selected barber
+    const selectedBarber = bookingState.barber ? bookingState.barber.name : null;
+    
     // Generate time slots
-    function generateTimeSlots(date) {
-        const timeGrid = document.getElementById('time-slots');
-        timeGrid.innerHTML = '';
-        
-        // Business hours: 9AM to 5PM
-        const startHour = 9;
-        const endHour = 17;
-        const interval = 10; // 10 minutes per slot
-        
-        // Get booked slots for this date
-        const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
-        
-        // Get service duration (minutes)
-        const serviceDuration = bookingState.service ? bookingState.service.duration : 30;
-        
-        // Generate time slots
-        for (let hour = startHour; hour < endHour; hour++) {
-            for (let minute = 0; minute < 60; minute += interval) {
-                // Skip slots that would extend beyond closing time
-                const slotTime = hour * 60 + minute;
-                const endTime = slotTime + serviceDuration;
-                if (endTime > endHour * 60) continue;
-                
-                const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                const timeSlot = document.createElement('div');
-                timeSlot.className = 'time-slot';
-                timeSlot.textContent = timeStr;
-                timeSlot.dataset.time = timeStr;
-                
-                // Check if this slot is already booked
-                let isDisabled = false;
-                
-                // Check if this slot would overlap with any booked slots
-                for (const bookedTime of bookedSlotsForDate) {
-                    const [bookedHour, bookedMinute] = bookedTime.split(':').map(Number);
-                    const bookedSlotTime = bookedHour * 60 + bookedMinute;
-                    
-                    // Check if the current slot overlaps with this booked slot
-                    if (
-                        (slotTime <= bookedSlotTime && bookedSlotTime < endTime) || 
-                        (bookedSlotTime <= slotTime && slotTime < bookedSlotTime + 30)
-                    ) {
-                        isDisabled = true;
-                        break;
+    for (let hour = startHour; hour < endHour; hour++) {
+        for (let minute = 0; minute < 60; minute += interval) {
+            const slotStartMinutes = hour * 60 + minute;
+            const slotEndMinutes = slotStartMinutes + serviceDuration;
+            
+            // Skip slots that would extend beyond closing time
+            if (slotEndMinutes > endHour * 60) continue;
+            
+            const timeStr = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
+            const timeSlot = document.createElement('div');
+            timeSlot.className = 'time-slot';
+            timeSlot.textContent = timeStr;
+            timeSlot.dataset.time = timeStr;
+            
+            // Check if this slot conflicts with existing appointments for THIS BARBER
+            let isDisabled = false;
+            
+            if (selectedBarber) {
+                for (const booking of bookedSlotsForDate) {
+                    // Only check bookings for the selected barber
+                    if (booking.barber && booking.barber === selectedBarber) {
+                        const timeParts = booking.time.split(':');
+                        const bookedHour = parseInt(timeParts[0]);
+                        const bookedMinute = parseInt(timeParts[1]);
+                        const bookedStartMinutes = bookedHour * 60 + bookedMinute;
+                        
+                        // Use actual duration from booking
+                        const existingDuration = booking.duration || 75;
+                        const bookedEndMinutes = bookedStartMinutes + existingDuration;
+                        
+                        // Check for overlap
+                        const overlaps = (slotStartMinutes < bookedEndMinutes) && (slotEndMinutes > bookedStartMinutes);
+                        
+                        if (overlaps) {
+                            isDisabled = true;
+                            break;
+                        }
                     }
                 }
-                
-                if (isDisabled) {
-                    timeSlot.classList.add('disabled');
-                } else {
-                    timeSlot.addEventListener('click', () => {
-                        // Only allow selection if not disabled
-                        if (!timeSlot.classList.contains('disabled')) {
-                            // Deselect all other time slots
-                            document.querySelectorAll('.time-slot').forEach(slot => {
-                                slot.classList.remove('selected');
-                            });
-                            
-                            // Select this time slot
-                            timeSlot.classList.add('selected');
-                            
-                            // Update state
-                            bookingState.time = timeStr;
-                            updateSummary();
-                        }
-                    });
-                }
-                
-                timeGrid.appendChild(timeSlot);
             }
+            
+            if (isDisabled) {
+                timeSlot.classList.add('disabled');
+            } else {
+                timeSlot.addEventListener('click', () => {
+                    if (!timeSlot.classList.contains('disabled')) {
+                        document.querySelectorAll('.time-slot').forEach(slot => {
+                            slot.classList.remove('selected');
+                        });
+                        timeSlot.classList.add('selected');
+                        bookingState.time = timeStr;
+                        updateSummary();
+                    }
+                });
+            }
+            
+            timeGrid.appendChild(timeSlot);
         }
     }
+}
     
     // Add-on Selection
     const addonCards = document.querySelectorAll('.addon-card');
