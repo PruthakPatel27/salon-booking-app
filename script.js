@@ -139,58 +139,19 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-// 🔍 DEBUGGING VERSION - Add this temporarily to your script.js to see the actual data structure
-// Add this BEFORE the existing generateTimeSlots function
+// 🔧 SIMPLIFIED FRONTEND FIX - Replace generateTimeSlots in script.js
+// This version works when Firebase properly extracts barber names
 
-function debugBookedSlots(date) {
-    console.log("🔍 DEBUGGING BOOKED SLOTS DATA STRUCTURE");
-    console.log("Date:", date);
-    console.log("bookingState.bookedSlots:", bookingState.bookedSlots);
-    console.log("bookedSlots for date:", bookingState.bookedSlots[date]);
-    
-    const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
-    console.log("bookedSlotsForDate length:", bookedSlotsForDate.length);
-    
-    if (bookedSlotsForDate.length > 0) {
-        console.log("First booking object:");
-        console.log(JSON.stringify(bookedSlotsForDate[0], null, 2));
-        
-        console.log("All booking objects:");
-        bookedSlotsForDate.forEach((booking, index) => {
-            console.log(`Booking ${index}:`, booking);
-            console.log(`  - Type:`, typeof booking);
-            console.log(`  - Is object:`, typeof booking === 'object');
-            console.log(`  - Has .barber:`, booking.hasOwnProperty('barber'));
-            console.log(`  - Has .time:`, booking.hasOwnProperty('time'));
-            console.log(`  - Has .duration:`, booking.hasOwnProperty('duration'));
-            
-            if (typeof booking === 'string') {
-                console.log(`  - String value: "${booking}"`);
-            } else if (typeof booking === 'object') {
-                console.log(`  - Object keys:`, Object.keys(booking));
-                console.log(`  - Object values:`, Object.values(booking));
-            }
-        });
-    }
-    
-    console.log("Selected barber:", bookingState.barber ? bookingState.barber.name : 'None');
-    console.log("🔍 END DEBUGGING");
-}
-
-// MODIFIED generateTimeSlots function with debugging
 function generateTimeSlots(date) {
-    // Add debugging call
-    debugBookedSlots(date);
-    
     const timeGrid = document.getElementById('time-slots');
     timeGrid.innerHTML = '';
     
     // Business hours: 9AM to 5PM
     const startHour = 9;
     const endHour = 17;
-    const interval = 10; // 10 minutes per slot
-    const businessStartMinutes = startHour * 60; // 540 minutes (9:00 AM)
-    const businessEndMinutes = endHour * 60; // 1020 minutes (5:00 PM)
+    const interval = 10;
+    const businessStartMinutes = startHour * 60;
+    const businessEndMinutes = endHour * 60;
     
     // Get booked slots for this date
     const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
@@ -211,30 +172,22 @@ function generateTimeSlots(date) {
     
     if (selectedBarber) {
         for (const booking of bookedSlotsForDate) {
-            console.log("🔍 Processing booking:", booking, "Type:", typeof booking);
+            console.log(`🔍 Processing booking:`, booking);
             
-            // HANDLE DIFFERENT DATA STRUCTURES
-            let barberName, bookingTime, bookingDuration;
-            
-            if (typeof booking === 'string') {
-                // If booking is just a time string like "09:00"
-                console.log("⚠️ Booking is just a time string:", booking);
-                // Skip string-only bookings as they don't have barber info
-                continue;
-            } else if (typeof booking === 'object' && booking !== null) {
-                // If booking is an object with properties
-                barberName = booking.barber;
-                bookingTime = booking.time;
-                bookingDuration = booking.duration || 75; // Default duration
-                
-                console.log(`📋 Object booking - Barber: ${barberName}, Time: ${bookingTime}, Duration: ${bookingDuration}`);
-            } else {
-                console.log("⚠️ Unknown booking format:", booking);
+            if (typeof booking !== 'object' || !booking.time) {
+                console.log("⚠️ Skipping invalid booking:", booking);
                 continue;
             }
             
-            // Only consider bookings for the selected barber
-            if (barberName && barberName === selectedBarber) {
+            // Get barber name from booking
+            const bookingBarber = booking.barber;
+            const bookingTime = booking.time;
+            const bookingDuration = booking.duration || 75; // Default to 75 minutes
+            
+            console.log(`📋 Booking details: Time=${bookingTime}, Barber="${bookingBarber}", Duration=${bookingDuration}`);
+            
+            // Only block slots for the same barber
+            if (bookingBarber && bookingBarber === selectedBarber) {
                 const timeParts = bookingTime.split(':');
                 const bookedHour = parseInt(timeParts[0]);
                 const bookedMinute = parseInt(timeParts[1]);
@@ -245,63 +198,79 @@ function generateTimeSlots(date) {
                     start: bookedStartMinutes,
                     end: bookedEndMinutes,
                     time: bookingTime,
-                    duration: bookingDuration
+                    duration: bookingDuration,
+                    barber: bookingBarber
                 });
                 
-                console.log(`🚫 Added blocked period: ${bookingTime} for ${bookingDuration} mins (${bookedStartMinutes}-${bookedEndMinutes})`);
+                console.log(`🚫 BLOCKED: ${bookingTime} for ${bookingDuration} mins (${bookedStartMinutes}-${bookedEndMinutes}) - Barber: ${bookingBarber}`);
+            } else if (!bookingBarber) {
+                console.log(`⚠️ No barber info found - this indicates a Firebase extraction issue`);
+                // For safety, block unknown barber appointments
+                const timeParts = bookingTime.split(':');
+                const bookedHour = parseInt(timeParts[0]);
+                const bookedMinute = parseInt(timeParts[1]);
+                const bookedStartMinutes = bookedHour * 60 + bookedMinute;
+                const bookedEndMinutes = bookedStartMinutes + bookingDuration;
+                
+                blockedPeriods.push({
+                    start: bookedStartMinutes,
+                    end: bookedEndMinutes,
+                    time: bookingTime,
+                    duration: bookingDuration,
+                    barber: 'Unknown'
+                });
+                
+                console.log(`🚫 BLOCKED (Unknown barber): ${bookingTime} for safety`);
             } else {
-                console.log(`➡️ Skipping booking - Different barber: ${barberName} vs ${selectedBarber}`);
+                console.log(`➡️ Different barber: "${bookingBarber}" vs "${selectedBarber}" - NOT blocking`);
             }
         }
     }
     
     console.log(`🚫 Total blocked periods for ${selectedBarber}:`, blockedPeriods.length);
+    blockedPeriods.forEach(period => {
+        console.log(`   - ${period.time} (${period.start}-${period.end}) by ${period.barber}`);
+    });
     
-    // Helper function to check if a proposed appointment time is available
+    // Helper function to check if a time slot is available
     function isTimeSlotAvailable(proposedStartMinutes, proposedDurationMinutes) {
         const proposedEndMinutes = proposedStartMinutes + proposedDurationMinutes;
         
-        // Check if the proposed appointment extends beyond business hours
+        // Check business hours
         if (proposedEndMinutes > businessEndMinutes) {
             return false;
         }
         
-        // Check against all blocked periods for this barber
+        // Check against blocked periods
         for (const blockedPeriod of blockedPeriods) {
-            // Use proper interval overlap detection:
-            // Two intervals [a,b] and [c,d] overlap if: max(a,c) < min(b,d)
             const overlapStart = Math.max(proposedStartMinutes, blockedPeriod.start);
             const overlapEnd = Math.min(proposedEndMinutes, blockedPeriod.end);
             
             if (overlapStart < overlapEnd) {
-                // There is an overlap - this slot is NOT available
-                console.log(`❌ Overlap detected: Proposed ${proposedStartMinutes}-${proposedEndMinutes} conflicts with blocked ${blockedPeriod.start}-${blockedPeriod.end}`);
+                console.log(`❌ CONFLICT: Proposed ${proposedStartMinutes}-${proposedEndMinutes} overlaps with blocked ${blockedPeriod.start}-${blockedPeriod.end} (${blockedPeriod.barber})`);
                 return false;
             }
         }
         
-        return true; // No conflicts found
+        return true;
     }
     
-    // Generate time slots with proper conflict checking
+    // Generate time slots
     let availableSlotCount = 0;
     
     for (let hour = startHour; hour < endHour; hour++) {
         for (let minute = 0; minute < 60; minute += interval) {
             const slotStartMinutes = hour * 60 + minute;
             
-            // Skip slots that would make appointment extend beyond closing time
+            // Skip if would extend beyond business hours
             if (slotStartMinutes + totalServiceDuration > businessEndMinutes) {
                 continue;
             }
             
             const timeStr = hour.toString().padStart(2, '0') + ':' + minute.toString().padStart(2, '0');
             
-            // Check if this entire appointment duration is available
-            const isAvailable = isTimeSlotAvailable(slotStartMinutes, totalServiceDuration);
-            
-            // Only create and show time slots that are actually available
-            if (isAvailable) {
+            // Check if this slot is available
+            if (isTimeSlotAvailable(slotStartMinutes, totalServiceDuration)) {
                 const timeSlot = document.createElement('div');
                 timeSlot.className = 'time-slot';
                 timeSlot.textContent = timeStr;
@@ -316,17 +285,15 @@ function generateTimeSlots(date) {
                 timeSlot.title = `Available ${timeStr} - ${endTimeStr} (${totalServiceDuration} mins)`;
                 
                 timeSlot.addEventListener('click', () => {
-                    // Remove selection from all other slots
                     document.querySelectorAll('.time-slot').forEach(slot => {
                         slot.classList.remove('selected');
                     });
                     
-                    // Select this slot
                     timeSlot.classList.add('selected');
                     bookingState.time = timeStr;
                     updateSummary();
                     
-                    console.log(`✅ Selected time slot: ${timeStr} - ${endTimeStr}`);
+                    console.log(`✅ Selected: ${timeStr} - ${endTimeStr}`);
                 });
                 
                 timeGrid.appendChild(timeSlot);
@@ -337,7 +304,7 @@ function generateTimeSlots(date) {
     
     console.log(`📊 Generated ${availableSlotCount} available time slots`);
     
-    // Show message if no slots are available
+    // Show message if no slots available
     if (availableSlotCount === 0) {
         const noSlotsMessage = document.createElement('div');
         noSlotsMessage.className = 'no-slots-message';
@@ -353,20 +320,18 @@ function generateTimeSlots(date) {
         noSlotsMessage.innerHTML = `
             <div style="font-size: 2rem; margin-bottom: 15px;">⚠️</div>
             <h3 style="color: #f57c00; margin-bottom: 10px;">No Available Time Slots</h3>
-            <p style="margin-bottom: 15px;">No ${totalServiceDuration}-minute slots available with <strong>${selectedBarber || 'selected barber'}</strong> on this date.</p>
+            <p style="margin-bottom: 15px;">No ${totalServiceDuration}-minute slots available with <strong>${selectedBarber}</strong> on this date.</p>
             <div style="text-align: left; max-width: 300px; margin: 0 auto;">
                 <p><strong>Try:</strong></p>
                 <ul style="margin: 10px 0; padding-left: 20px;">
                     <li>Selecting a different date</li>
                     <li>Choosing a different barber</li>
                     <li>Reducing add-on services</li>
-                    <li>Booking a shorter service</li>
                 </ul>
             </div>
         `;
         
         timeGrid.appendChild(noSlotsMessage);
-        console.log(`❌ No available slots for ${totalServiceDuration} minutes with ${selectedBarber}`);
     }
 }
     
