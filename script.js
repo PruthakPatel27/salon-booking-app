@@ -139,10 +139,49 @@ const datePicker = flatpickr("#date-picker", {
         });
     });
     
-// 🔧 COMPLETE REPLACEMENT for generateTimeSlots function in script.js
-// This function prevents double-bookings by properly blocking conflicting time slots
+// 🔍 DEBUGGING VERSION - Add this temporarily to your script.js to see the actual data structure
+// Add this BEFORE the existing generateTimeSlots function
 
+function debugBookedSlots(date) {
+    console.log("🔍 DEBUGGING BOOKED SLOTS DATA STRUCTURE");
+    console.log("Date:", date);
+    console.log("bookingState.bookedSlots:", bookingState.bookedSlots);
+    console.log("bookedSlots for date:", bookingState.bookedSlots[date]);
+    
+    const bookedSlotsForDate = bookingState.bookedSlots[date] || [];
+    console.log("bookedSlotsForDate length:", bookedSlotsForDate.length);
+    
+    if (bookedSlotsForDate.length > 0) {
+        console.log("First booking object:");
+        console.log(JSON.stringify(bookedSlotsForDate[0], null, 2));
+        
+        console.log("All booking objects:");
+        bookedSlotsForDate.forEach((booking, index) => {
+            console.log(`Booking ${index}:`, booking);
+            console.log(`  - Type:`, typeof booking);
+            console.log(`  - Is object:`, typeof booking === 'object');
+            console.log(`  - Has .barber:`, booking.hasOwnProperty('barber'));
+            console.log(`  - Has .time:`, booking.hasOwnProperty('time'));
+            console.log(`  - Has .duration:`, booking.hasOwnProperty('duration'));
+            
+            if (typeof booking === 'string') {
+                console.log(`  - String value: "${booking}"`);
+            } else if (typeof booking === 'object') {
+                console.log(`  - Object keys:`, Object.keys(booking));
+                console.log(`  - Object values:`, Object.values(booking));
+            }
+        });
+    }
+    
+    console.log("Selected barber:", bookingState.barber ? bookingState.barber.name : 'None');
+    console.log("🔍 END DEBUGGING");
+}
+
+// MODIFIED generateTimeSlots function with debugging
 function generateTimeSlots(date) {
+    // Add debugging call
+    debugBookedSlots(date);
+    
     const timeGrid = document.getElementById('time-slots');
     timeGrid.innerHTML = '';
     
@@ -172,28 +211,51 @@ function generateTimeSlots(date) {
     
     if (selectedBarber) {
         for (const booking of bookedSlotsForDate) {
+            console.log("🔍 Processing booking:", booking, "Type:", typeof booking);
+            
+            // HANDLE DIFFERENT DATA STRUCTURES
+            let barberName, bookingTime, bookingDuration;
+            
+            if (typeof booking === 'string') {
+                // If booking is just a time string like "09:00"
+                console.log("⚠️ Booking is just a time string:", booking);
+                // Skip string-only bookings as they don't have barber info
+                continue;
+            } else if (typeof booking === 'object' && booking !== null) {
+                // If booking is an object with properties
+                barberName = booking.barber;
+                bookingTime = booking.time;
+                bookingDuration = booking.duration || 75; // Default duration
+                
+                console.log(`📋 Object booking - Barber: ${barberName}, Time: ${bookingTime}, Duration: ${bookingDuration}`);
+            } else {
+                console.log("⚠️ Unknown booking format:", booking);
+                continue;
+            }
+            
             // Only consider bookings for the selected barber
-            if (booking.barber && booking.barber === selectedBarber) {
-                const timeParts = booking.time.split(':');
+            if (barberName && barberName === selectedBarber) {
+                const timeParts = bookingTime.split(':');
                 const bookedHour = parseInt(timeParts[0]);
                 const bookedMinute = parseInt(timeParts[1]);
                 const bookedStartMinutes = bookedHour * 60 + bookedMinute;
-                
-                // Use actual duration from booking, with fallback
-                const existingDuration = booking.duration || 75;
-                const bookedEndMinutes = bookedStartMinutes + existingDuration;
+                const bookedEndMinutes = bookedStartMinutes + bookingDuration;
                 
                 blockedPeriods.push({
                     start: bookedStartMinutes,
                     end: bookedEndMinutes,
-                    time: booking.time,
-                    duration: existingDuration
+                    time: bookingTime,
+                    duration: bookingDuration
                 });
                 
-                console.log(`🚫 Blocked period: ${booking.time} for ${existingDuration} mins (${bookedStartMinutes}-${bookedEndMinutes})`);
+                console.log(`🚫 Added blocked period: ${bookingTime} for ${bookingDuration} mins (${bookedStartMinutes}-${bookedEndMinutes})`);
+            } else {
+                console.log(`➡️ Skipping booking - Different barber: ${barberName} vs ${selectedBarber}`);
             }
         }
     }
+    
+    console.log(`🚫 Total blocked periods for ${selectedBarber}:`, blockedPeriods.length);
     
     // Helper function to check if a proposed appointment time is available
     function isTimeSlotAvailable(proposedStartMinutes, proposedDurationMinutes) {
@@ -213,6 +275,7 @@ function generateTimeSlots(date) {
             
             if (overlapStart < overlapEnd) {
                 // There is an overlap - this slot is NOT available
+                console.log(`❌ Overlap detected: Proposed ${proposedStartMinutes}-${proposedEndMinutes} conflicts with blocked ${blockedPeriod.start}-${blockedPeriod.end}`);
                 return false;
             }
         }
@@ -269,7 +332,6 @@ function generateTimeSlots(date) {
                 timeGrid.appendChild(timeSlot);
                 availableSlotCount++;
             }
-            // Note: We don't create disabled slots - we simply don't show unavailable times at all
         }
     }
     
