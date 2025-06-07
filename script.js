@@ -42,14 +42,35 @@ const phoneInput = window.intlTelInput(document.getElementById('phone'), {
     separateDialCode: false, // Don't separate the dial code
     utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/18.1.5/js/utils.js"
 });
-// Initialize date picker
+// 🔧 UPDATED Date Picker Configuration
+// Replace your existing flatpickr initialization with this:
+
 const datePicker = flatpickr("#date-picker", {
     minDate: "today",
     dateFormat: "Y-m-d",
     disable: [
         function(date) {
-            // Disable weekends
-            return date.getDay() === 0; // Sunday
+            // Get current date and time in IST
+            const now = new Date();
+            const istNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+            
+            // Get the date being checked (without time)
+            const dateToCheck = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const todayIST = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
+            
+            // Check if this is today
+            const isToday = dateToCheck.getTime() === todayIST.getTime();
+            
+            // If it's today and current IST time is after 5 PM (17:00), disable today
+            if (isToday) {
+                const currentHour = istNow.getHours();
+                if (currentHour >= 17) { // 5 PM or later in IST
+                    return true; // Disable today
+                }
+            }
+            
+            // Don't disable any other dates (weekends are now enabled)
+            return false;
         }
     ],
     onChange: async function(selectedDates, dateStr) {
@@ -69,9 +90,9 @@ const datePicker = flatpickr("#date-picker", {
             const result = await response.json();
             
             if (result.success) {
-            // Store the complete booking data with barber information
-            bookingState.bookedSlots[dateStr] = result.bookedSlots;
-            console.log(`Fetched ${result.bookedSlots.length} booked slots for ${dateStr}:`, result.bookedSlots);
+                // Store the complete booking data with barber information
+                bookingState.bookedSlots[dateStr] = result.bookedSlots;
+                console.log(`Fetched ${result.bookedSlots.length} booked slots for ${dateStr}:`, result.bookedSlots);
             } else {
                 console.error('Error fetching booked slots:', result.error);
                 // Use any existing data as fallback
