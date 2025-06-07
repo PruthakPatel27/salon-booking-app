@@ -772,9 +772,9 @@ async function submitBooking() {
         }
     }
     
-    // Send email confirmation function - Uses Zapier webhook
+    // 🔧 ENHANCED: Send email confirmation function - Uses Zapier webhook
     function sendEmailConfirmation(bookingData) {
-        // Create query parameters
+        // Create query parameters with enhanced reschedule/cancel support
         const params = new URLSearchParams({
             messageType: 'email',
             customerEmail: bookingData.customerInfo.email,
@@ -789,11 +789,26 @@ async function submitBooking() {
             appointmentId: bookingData.appointmentId
         });
         
-        // Add rescheduling info if applicable
+        // 🆕 Add reschedule-specific information
         if (bookingData.isRescheduled) {
             params.append('isRescheduled', 'true');
             params.append('oldDate', bookingData.oldDate);
             params.append('oldTime', bookingData.oldTime);
+            // Format old date for better readability
+            const oldDateFormatted = new Date(bookingData.oldDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            params.append('oldDateFormatted', oldDateFormatted);
+        }
+        
+        // 🆕 Add cancellation information
+        if (bookingData.isCancelled) {
+            params.append('isCancelled', 'true');
+            params.append('cancellationReason', bookingData.cancellationReason || 'Customer request');
+            params.append('cancellationDate', new Date().toISOString());
         }
         
         // Send data to Zapier webhook with query parameters
@@ -812,9 +827,9 @@ async function submitBooking() {
         });
     }
     
-    // Send SMS confirmation function - Uses Zapier webhook
+    // 🔧 ENHANCED: Send SMS confirmation function - Uses Zapier webhook
     function sendSMSConfirmation(bookingData) {
-        // Create query parameters
+        // Create query parameters with enhanced reschedule/cancel support
         const params = new URLSearchParams({
             messageType: 'sms',
             phoneNumber: bookingData.customerInfo.phone,
@@ -827,11 +842,23 @@ async function submitBooking() {
             consentTimestamp: new Date().toISOString()
         });
         
-        // Add rescheduling info if applicable
+        // 🆕 Add reschedule-specific information
         if (bookingData.isRescheduled) {
             params.append('isRescheduled', 'true');
             params.append('oldDate', bookingData.oldDate);
             params.append('oldTime', bookingData.oldTime);
+            // Format old date for better readability in SMS
+            const oldDateFormatted = new Date(bookingData.oldDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+            params.append('oldDateFormatted', oldDateFormatted);
+        }
+        
+        // 🆕 Add cancellation information
+        if (bookingData.isCancelled) {
+            params.append('isCancelled', 'true');
+            params.append('cancellationDate', new Date().toISOString());
         }
         
         // Send data to Zapier webhook with query parameters
@@ -850,9 +877,9 @@ async function submitBooking() {
         });
     }
     
-    // Send WhatsApp confirmation function - Uses Zapier webhook
+    // 🔧 ENHANCED: Send WhatsApp confirmation function - Uses Zapier webhook
     function sendWhatsAppConfirmation(bookingData) {
-        // Create query parameters
+        // Create query parameters with enhanced reschedule/cancel support
         const params = new URLSearchParams({
             messageType: 'whatsapp',
             phoneNumber: bookingData.customerInfo.phone,
@@ -865,11 +892,17 @@ async function submitBooking() {
             appointmentId: bookingData.appointmentId
         });
         
-        // Add rescheduling info if applicable
+        // 🆕 Add reschedule-specific information
         if (bookingData.isRescheduled) {
             params.append('isRescheduled', 'true');
             params.append('oldDate', bookingData.oldDate);
             params.append('oldTime', bookingData.oldTime);
+        }
+        
+        // 🆕 Add cancellation information
+        if (bookingData.isCancelled) {
+            params.append('isCancelled', 'true');
+            params.append('cancellationDate', new Date().toISOString());
         }
         
         // Send data to Zapier webhook with query parameters
@@ -886,6 +919,28 @@ async function submitBooking() {
         .catch(error => {
             console.error('Error sending WhatsApp confirmation:', error);
         });
+    }
+    
+    // 🆕 NEW: Send cancellation notifications function
+    function sendCancellationNotifications(bookingData) {
+        console.log('Sending cancellation notifications for:', bookingData);
+        
+        // Prepare cancellation data
+        const cancellationData = {
+            ...bookingData,
+            isCancelled: true,
+            cancellationReason: 'Customer request',
+            cancellationDate: new Date().toISOString()
+        };
+        
+        // Always send email notification for cancellations
+        sendEmailConfirmation(cancellationData);
+        
+        // Send SMS and WhatsApp only if consent was originally given
+        if (bookingData.smsConsent) {
+            sendSMSConfirmation(cancellationData);
+            sendWhatsAppConfirmation(cancellationData);
+        }
     }
     
     // Add to Calendar button handler
@@ -931,7 +986,8 @@ END:VCALENDAR`;
         link.click();
         document.body.removeChild(link);
     });
-// Reschedule button handler
+
+// 🔧 ENHANCED: Reschedule button handler with improved notifications
 document.getElementById('reschedule-btn').addEventListener('click', function() {
     // Store old date and time for later reference (to free up the slot)
     const oldDate = bookingState.date;
@@ -959,7 +1015,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
             }
             bookingState.bookedSlots[bookingState.date].push(bookingState.time);
             
-            // Create booking data object for reschedule
+            // 🔧 ENHANCED: Create booking data object for reschedule with better formatting
             const bookingData = {
                 appointmentId: bookingState.appointmentId,
                 service: bookingState.service,
@@ -973,13 +1029,14 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 smsConsent: bookingState.smsConsent,
                 isRescheduled: true,
                 oldDate: oldDate,
-                oldTime: oldTime
+                oldTime: oldTime,
+                rescheduleDate: new Date().toISOString()
             };
             
             // Update Google Calendar event via Firebase Function
             async function updateCalendarEvent() {
                 try {
-                    // Call our new updateEvent function
+                    // Call our updateEvent function
                     const response = await fetch('https://updateevent-is52ejehnq-uc.a.run.app', {
                         method: 'POST',
                         headers: {
@@ -1010,7 +1067,7 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
                 console.log('No Google Calendar event ID found, skipping update');
             }
 
-            // Send reschedule notifications
+            // 🔧 ENHANCED: Send reschedule notifications with improved data
             sendConfirmations(bookingData);
             goToStep('confirmation');
             
@@ -1044,7 +1101,8 @@ document.getElementById('reschedule-btn').addEventListener('click', function() {
         }
     }, true); // Use capturing phase to run before other handlers
 });
-// Cancel button handler
+
+// 🔧 ENHANCED: Cancel button handler with proper notifications
 document.getElementById('cancel-btn').addEventListener('click', function() {
     // Show custom confirmation dialog instead of browser's confirm()
     const customDialog = document.getElementById('custom-confirm-dialog');
@@ -1058,6 +1116,26 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
     // Handle "Yes" button click
     document.getElementById('custom-cancel-yes').onclick = function() {
         customDialog.style.display = 'none';
+        
+        // 🆕 ENHANCED: Create cancellation data for notifications
+        const cancellationData = {
+            appointmentId: bookingState.appointmentId,
+            service: bookingState.service,
+            barber: bookingState.barber,
+            date: bookingState.date,
+            time: bookingState.time,
+            addons: bookingState.addons,
+            customerInfo: bookingState.customerInfo,
+            totalPrice: bookingState.totalPrice,
+            totalDuration: bookingState.totalDuration,
+            smsConsent: bookingState.smsConsent,
+            isCancelled: true,
+            cancellationReason: 'Customer request',
+            cancellationDate: new Date().toISOString()
+        };
+        
+        // 🆕 NEW: Send cancellation notifications BEFORE removing from calendar
+        sendCancellationNotifications(cancellationData);
         
         // Remove the booking from booked slots
         const bookedSlotsForDate = bookingState.bookedSlots[bookingState.date] || [];
@@ -1075,7 +1153,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
             }
             
             try {
-                // Call our new deleteEvent function
+                // Call our deleteEvent function
                 const response = await fetch('https://deleteevent-is52ejehnq-uc.a.run.app', {
                     method: 'POST',
                     headers: {
@@ -1142,7 +1220,7 @@ document.getElementById('cancel-btn').addEventListener('click', function() {
         updateSummary();
         
         // Show custom success message instead of alert()
-        showCustomSuccessMessage('Your appointment has been cancelled.');
+        showCustomSuccessMessage('Your appointment has been cancelled. A confirmation has been sent to your email.');
     };
 });
 
